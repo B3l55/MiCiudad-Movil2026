@@ -1,0 +1,16 @@
+app/
+├── _layout.tsx                    (Providers de sesión/tema + Stack raíz)
+├── (auth)/                        (Grupo para pantallas públicas)
+│   ├── login.tsx
+│   └── registro.tsx
+├── (tabs)/                        (Navegación principal inferior)
+│   ├── _layout.tsx                (Configuración de <Tabs>)
+│   ├── index.tsx                  (Tab 1: Inicio / Mapa resumido)
+│   ├── agenda.tsx                 (Tab 2: Agenda)
+│   ├── recorrido.tsx              (Tab 3: Mi recorrido)
+│   └── perfil.tsx                 (Tab 4: Yo)
+├── lugar/
+│   └── [id].tsx                   (Stack: Detalle de lugar, oculta tabs)
+├── evento/
+│   └── [id].tsx                   (Stack: Detalle de evento, oculta tabs)
+└── favoritos.tsx                  (Stack: Pantalla extra)

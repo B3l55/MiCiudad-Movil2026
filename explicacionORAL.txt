@@ -1,0 +1,26 @@
+1.El archivo index.tsx (Tu pantalla)
+es tu pantalla de Inicio. 
+En la lógica de Expo Router,
+cada archivo creado se convierte automáticamente en una ruta,
+e index.tsx representa la ruta principal (la raíz /) de esa carpeta. 
+Ahí es exactamente donde vas a estructurar el contenido de tu pantalla: los componentes 
+visuales como el mapa, los textos, las listas y los estilos.
+
+
+2. El archivo _layout.tsx (El envoltorio o navegador)
+Mientras que los archivos como index.tsx representan las pantallas individuales,
+el _layout.tsx declara cómo se ven en conjunto; es decir,
+actúa como el navegador (router) de esa carpeta.  
+Pensalo como un marco permanente.
+Es el archivo responsable de dibujar la estructura de navegación a su alrededor, ya sea apilando una pantalla sobre otra con <Stack/>
+mostrando pestañas inferiores con <Tabs/> o abriendo un menú lateral con <Drawer/>.
+También es el lugar central para aplicar configuraciones comunes. 
+Por ejemplo, desde las opciones del _layout.tsx 
+podés cambiar el color de la barra superior (header) para todas las pantallas a la vez.
+Además, existe una forma de usarlo sin navegación visual mediante un componente llamado <Slot/>.
+Este funciona como un "agujero" donde se dibuja la ruta que corresponda, 
+y es ideal para envolver toda la aplicación con proveedores de sesión o datos sin afectar el diseño.  
+
+
+Para resumirlo: index.tsx es la foto (tu contenido), y _layout.tsx es el marco
+ (la navegación y los menús que rodean esa foto).

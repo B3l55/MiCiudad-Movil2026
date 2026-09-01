@@ -1,98 +1,212 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+// app/(tabs)/index.tsx
+import Ionicons from '@react-native-vector-icons/ionicons';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { lugaresServicio } from '../src/servicios/lugares';
+import { Lugar } from '../src/tipos/lugares';
 
-export default function HomeScreen() {
+export default function Inicio() {
+  const [lugares, setLugares] = useState<Lugar[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // useEffect: Se ejecuta una sola vez al montar la pantalla para buscar los datos
+  useEffect(() => {
+    const cargarLugares = async () => {
+      try {
+        const respuesta = await lugaresServicio.obtenerLugares();
+        setLugares(respuesta.datos);
+      } catch (err) {
+        setError("No se pudieron cargar los datos de Colón.");
+      } finally {
+        setCargando(false);
+      }
+    };
+
+    cargarLugares();
+  }, []);
+
+  if (cargando) {
+    return (
+      <SafeAreaView style={[estilos.contenedor, estilos.centrado]} edges={['top']}>
+        <ActivityIndicator size="large" color="#0B5394" />
+        <Text style={estilos.textoMensaje}>Cargando Guía de Colón...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={[estilos.contenedor, estilos.centrado]} edges={['top']}>
+        <Text style={estilos.textoError}>{error}</Text>
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <SafeAreaView style={estilos.contenedor} edges={['top']}>
+      
+      {/* 1. BARRA SUPERIOR (Título + Botón [ Q ] para QR) */}
+      <View style={estilos.barraSuperior}>
+        <Text style={estilos.tituloApp}>Colón</Text>
+        <Pressable 
+          style={estilos.botonQr} 
+          onPress={() => alert("Acá se abrirá la cámara para leer el código QR")}
+          accessibilityLabel="Escanear código QR"
+          role="button"
+        >
+          <Ionicons name="qr-code-outline" size={22} color="#0B5394" />
+          <Text style={estilos.textoQr}> Q </Text>
+        </Pressable>
+      </View>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      {/* 2. ZONA DE MAPA (Simulada hasta integrar react-native-maps) */}
+      <View style={estilos.contenedorMapa}>
+        <View style={estilos.cajaMapaSimulado}>
+          <Ionicons name="map" size={40} color="#8E99A4" />
+          <Text style={estilos.textoMapa}>MAPA con marcadores</Text>
+          <Text style={estilos.subtextoMapa}>(o) vos estás acá</Text>
+        </View>
+      </View>
+
+      {/* 3. SECCIÓN "CERCA TUYO" (Lista ordenada por distancia) */}
+      <View style={estilos.seccionCercanos}>
+        <Text style={estilos.tituloSeccion}>Cerca tuyo</Text>
+        
+        <FlatList
+          data={lugares}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={estilos.tarjetaCercana}>
+              <View>
+                <Text style={estilos.nombreLugar}>{item.nombre}</Text>
+                <Text style={estilos.descripcionCorta} numberOfLines={1}>
+                  {item.descripcionCorta}
+                </Text>
+              </View>
+              {/* Distancia simulada para cumplir con el boceto */}
+              <Text style={estilos.distancia}>900 m</Text>
+            </View>
+          )}
+          contentContainerStyle={estilos.listaCercanos}
+          ListEmptyComponent={<Text style={estilos.textoMensaje}>No hay lugares cercanos.</Text>}
+        />
+      </View>
+
+    </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  titleContainer: {
+const estilos = StyleSheet.create({
+  contenedor: {
+    flex: 1,
+    backgroundColor: '#F2F2F7',
+  },
+  centrado: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  barraSuperior: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5EA',
+  },
+  tituloApp: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#0B5394',
+  },
+  botonQr: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    backgroundColor: '#EBF3FB',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
   },
-  stepContainer: {
-    gap: 8,
+  textoQr: {
+    fontWeight: 'bold',
+    color: '#0B5394',
+    marginLeft: 4,
+  },
+  contenedorMapa: {
+    height: 220, // Altura fija para el mapa en la pantalla principal
+    padding: 16,
+  },
+  cajaMapaSimulado: {
+    flex: 1,
+    backgroundColor: '#E3E6EB',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+  },
+  textoMapa: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#4B5563',
+    marginTop: 8,
+  },
+  subtextoMapa: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 4,
+  },
+  seccionCercanos: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  tituloSeccion: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1C1C1E',
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  listaCercanos: {
+    gap: 8,
+    paddingBottom: 16,
+  },
+  tarjetaCercana: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    padding: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+  },
+  nombreLugar: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1C1C1E',
+  },
+  descripcionCorta: {
+    fontSize: 13,
+    color: '#5C6B7A',
+    maxWidth: 220,
+  },
+  distancia: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#0B5394',
+  },
+  textoMensaje: {
+    fontSize: 14,
+    color: '#5C6B7A',
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  textoError: {
+    fontSize: 16,
+    color: '#D32F2F',
   },
 });

@@ -1,0 +1,16 @@
+instale npx expo install @react-navigation/drawer react-native-gesture-handler react-native-reanimated
+que es Drawer:
+ el menú lateral
+ 
+// src/app/_layout.tsx
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Drawer } from 'expo-router/drawer';
+export default function Layout() {
+return (
+<GestureHandlerRootView style={{ flex: 1 }}>
+<Drawer>
+<Drawer.Screen name="index"
+options={{ drawerLabel: 'Inicio', title: 'Tienda' }} />
+</Drawer>
+</GestureHandlerRootView>
+);
