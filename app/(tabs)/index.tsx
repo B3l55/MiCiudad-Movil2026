@@ -1,9 +1,9 @@
 // app/(tabs)/index.tsx
 import Ionicons from '@react-native-vector-icons/ionicons';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
 import { lugaresServicio } from '../src/servicios/lugares';
 import { Lugar } from '../src/tipos/lugares';
 
@@ -12,7 +12,7 @@ export default function Inicio() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // useEffect: Se ejecuta una sola vez al montar la pantalla para buscar los datos
+  //useEffect: Se ejecuta una sola vez al montar la pantalla para buscar los datos
   useEffect(() => {
     const cargarLugares = async () => {
       try {
@@ -51,15 +51,15 @@ export default function Inicio() {
       {/* 1. BARRA SUPERIOR (Título + Botón [ Q ] para QR) */}
       <View style={estilos.barraSuperior}>
         <Text style={estilos.tituloApp}>Colón</Text>
-        <Pressable 
-          style={estilos.botonQr} 
-          onPress={() => alert("Acá se abrirá la cámara para leer el código QR")}
-          accessibilityLabel="Escanear código QR"
-          role="button"
-        >
-          <Ionicons name="qr-code-outline" size={22} color="#0B5394" />
-          <Text style={estilos.textoQr}> Q </Text>
-        </Pressable>
+      <Pressable 
+  style={estilos.botonQr} 
+  onPress={() => router.push('/escaner')}
+  accessibilityLabel="Escanear código QR"
+  role="button"
+>
+  <Ionicons name="qr-code-outline" size={22} color="#0B5394" />
+  <Text style={estilos.textoQr}> Q </Text>
+</Pressable>
       </View>
 
       {/* 2. ZONA DE MAPA (Simulada hasta integrar react-native-maps) */}
