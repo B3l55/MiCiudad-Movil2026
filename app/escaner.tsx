@@ -1,9 +1,8 @@
 // app/escaner.tsx
-import { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, Pressable } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { router, Stack } from 'expo-router';
-import Ionicons from '@react-native-vector-icons/ionicons';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 export default function PantallaEscaner() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -30,9 +29,14 @@ export default function PantallaEscaner() {
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     if (scanned) return;
     setScanned(true);
-    alert(`QR Detectado: ${data}`);
-    // Aquí luego podemos procesar el código (ej: "COLON:lug-004") y llevarlo al detalle
-    router.back();
+
+    if (data.startsWith('COLON:')) {
+      const idLugar = data.split(':')[1];
+      router.replace({ pathname: "/registro-visita/[id]", params: { id: idLugar } });
+    } else {
+      alert("Código no reconocido. Este QR no pertenece a la Guía Turística de Colón.");
+      setTimeout(() => setScanned(false), 2000); 
+    }
   };
 
   return (
@@ -40,7 +44,7 @@ export default function PantallaEscaner() {
       <Stack.Screen options={{ title: 'Escanear QR de la Peatonal', headerStyle: { backgroundColor: '#0B5394' }, headerTintColor: '#fff' }} />
       
       <CameraView
-        style={StyleSheet.absoluteFillObject}
+        style={estilos.camara}
         facing="back"
         onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
         barcodeScannerSettings={{
@@ -64,6 +68,13 @@ const estilos = StyleSheet.create({
   contenedor: {
     flex: 1,
     backgroundColor: '#000',
+  },
+  camara: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   centrado: {
     flex: 1,

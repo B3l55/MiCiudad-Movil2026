@@ -35,4 +35,8 @@ export interface Lugar {
   accesible: boolean;
   activo: boolean;
   actualizadoEn: string;
+  latitud?: number;
+  longitud?: number;
+
+
 }

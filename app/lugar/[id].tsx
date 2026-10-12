@@ -1,12 +1,11 @@
 // app/lugar/[id].tsx
-import { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, ActivityIndicator, Pressable, Platform } from 'react-native';
-import { useLocalSearchParams, Stack, router } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@react-native-vector-icons/ionicons';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { Lugar } from '../src/tipos/lugares';
-import { lugaresServicio } from '../src/servicios/lugares';
+import { lugaresServicio } from '../../src/servicios/lugares';
+import { Lugar } from '../../src/tipos/lugares';
 
 
 export default function DetalleLugar(){

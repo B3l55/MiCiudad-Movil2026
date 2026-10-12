@@ -53,3 +53,7 @@ Persistencia Local y Conectividad (Requisito 7): Implementar expo-sqlite para gu
 Sensores o Háptica (Requisito 8): Añadir una interacción justificada usando expo-haptics (vibraciones táctiles al presionar botones clave) o expo-sensors.
 
 Identidad de la Aplicación (Requisito 10): Definir el nombre del producto, el ícono oficial (PNG de 1024x1024 sin transparencias) y la pantalla de presentación (splash screen).
+
+
+alumno@uner.edu.ar
+contraseña 123456
