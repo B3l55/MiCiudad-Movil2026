@@ -57,3 +57,19 @@ Identidad de la Aplicación (Requisito 10): Definir el nombre del producto, el �
 
 alumno@uner.edu.ar
 contraseña 123456
+
+
+
+
+--------------
+Agenda de Eventos: Pantalla con la lista de actividades por día (peñas, ferias, visitas guiadas), detalle del evento, y el botón para guardarlo.
+
+Mi Recorrido (Registro de Visita): La pantalla donde el turista saca la foto y deja una nota (conectado a lo que hicimos hoy del escáner QR), y el historial de por dónde anduvo.
+
+Favoritos y Almacenamiento Offline: El botón de "corazoncito" para guardar lugares y la configuración de almacenamiento local (AsyncStorage o SQLite) para que la app sobreviva y muestre los datos en El Palmar sin señal.
+
+abrir docker
+docker compose -f compose.postgres.yaml up
+docker compose -f compose.postgres.yaml logs --tail=50 -f api
+
+abrir front npx expo start -c

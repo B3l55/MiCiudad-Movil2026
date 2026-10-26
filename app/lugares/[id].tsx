@@ -1,230 +1,319 @@
 // app/lugares/[id].tsx
-import Ionicons from '@react-native-vector-icons/ionicons';
-import { useAudioPlayer } from 'expo-audio'; // <--- NUEVO: Importamos el módulo oficial
+import { Ionicons } from '@expo/vector-icons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { WebView } from 'react-native-webview';
 
+import { favoritosServicio } from '../../src/servicios/favoritos';
 import { lugaresServicio } from '../../src/servicios/lugares';
-// import { Lugar } from '../../src/tipos/lugares'; NO VA
-import { ErrorApi } from '../../src/tipos/api';
-import { Audioguia, Lugar } from '../../src/tipos/lugares';
+import { Lugar } from '../../src/tipos/lugares';
 
-// ---> NUEVO: Componente reproductor separado <---
-function ReproductorAudioguia({ audioguia }: { audioguia: Audioguia }) {
-  // Inicializamos el reproductor con la URL del audio
-  const player = useAudioPlayer(audioguia.url);
-
-  const alternarReproduccion = () => {
-    if (player.playing) {
-      player.pause();
-    } else {
-      player.play();
-    }
-  };
-
-  return (
-    <View style={estilos.cajaAudioguia}>
-      <Pressable style={estilos.botonPlay} onPress={alternarReproduccion}>
-        {/* Cambia el ícono de Play a Pausa automáticamente */}
-        <Ionicons name={player.playing ? "pause" : "play"} size={24} color="#FFF" />
-      </Pressable>
-      <View style={{ marginLeft: 12, flex: 1 }}>
-        <Text style={estilos.textoAudioguiaTitulo}>Audioguía disponible</Text>
-        <Text style={estilos.textoAudioguiaSub}>
-          {player.playing ? "Reproduciendo..." : `Duración: ${Math.round(audioguia.duracionSegundos / 60)} min`}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
-export default function DetalleLugar() {
+export default function DetalleLugarPantalla() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [lugar, setLugar] = useState<Lugar | null>(null);
   const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [esFavorito, setEsFavorito] = useState(false);
+  const [cargandoFavorito, setCargandoFavorito] = useState(false);
 
   useEffect(() => {
-    const cargarDetalle = async () => {
+    if (!id) return;
+    
+    const cargarDatos = async () => {
+      setCargando(true);
       try {
-        const lugarEncontrado = await lugaresServicio.obtenerLugarPorId(id);
-        setLugar(lugarEncontrado);
-      } catch (err) {
-        setError(err instanceof ErrorApi ? err.message : 'Ocurrió un error inesperado.');
+        const [datosLugar, idsFavoritos] = await Promise.all([
+          lugaresServicio.obtenerLugarPorId(id as string),
+          favoritosServicio.obtenerFavoritosIds()
+        ]);
+        setLugar(datosLugar);
+        setEsFavorito(idsFavoritos.includes(id as string));
+      } catch (error) {
+        console.error('Error al cargar detalle del lugar:', error);
       } finally {
         setCargando(false);
       }
     };
-    cargarDetalle();
+    cargarDatos();
   }, [id]);
+
+  const alternarFavorito = async () => {
+    if (!id || cargandoFavorito) return;
+    setCargandoFavorito(true);
+    try {
+      if (esFavorito) {
+        await favoritosServicio.eliminarFavorito(id as string);
+        setEsFavorito(false);
+      } else {
+        await favoritosServicio.agregarFavorito(id as string);
+        setEsFavorito(true);
+      }
+    } catch (error) {
+      console.error('Error al modificar favorito:', error);
+    } finally {
+      setCargandoFavorito(false);
+    }
+  };
+
+  // --- FORMATEADOR DE HORARIOS INTELIGENTE ---
+  const formatearHorarios = (data: any): string => {
+    if (!data) return 'Abierto - Consultar horarios';
+    if (typeof data === 'string') return data;
+
+    if (Array.isArray(data)) {
+      if (data.length === 0) return 'Abierto - Consultar horarios';
+      
+      const horariosFormateados = data.map((item) => {
+        if (typeof item === 'string') return item;
+        if (typeof item === 'object' && item !== null) {
+          const dia = item.dia || item.dias || item.diaSemana || '';
+          const abre = item.abre || item.apertura || item.desde || '';
+          const cierra = item.cierra || item.cierre || item.hasta || '';
+          const texto = item.texto || item.horario || item.descripcion;
+
+          if (texto) return `${dia ? dia + ': ' : ''}${texto}`;
+          if (abre && cierra) return `${dia ? dia + ' ' : ''}${abre} a ${cierra}`;
+          if (abre) return `${dia ? dia + ' ' : ''}${abre}`;
+
+          const valores = Object.values(item).filter(v => typeof v === 'string' || typeof v === 'number');
+          if (valores.length > 0) return valores.join(' ');
+        }
+        return '';
+      }).filter(Boolean);
+
+      return horariosFormateados.length > 0 ? horariosFormateados.join(' | ') : 'Abierto - Consultar horarios';
+    }
+
+    if (typeof data === 'object' && data !== null) {
+      const dia = data.dia || data.dias || '';
+      const abre = data.abre || data.apertura || '';
+      const cierra = data.cierra || data.cierre || '';
+      const texto = data.texto || data.horario;
+
+      if (texto) return `${dia ? dia + ': ' : ''}${texto}`;
+      if (abre && cierra) return `${dia ? dia + ' ' : ''}${abre} a ${cierra}`;
+      return Object.values(data).filter(v => typeof v === 'string' || typeof v === 'number').join(' ');
+    }
+
+    return 'Abierto - Consultar horarios';
+  };
 
   if (cargando) {
     return (
-      <View style={[estilos.contenedor, estilos.centrado]}>
+      <View style={estilos.centrado}>
+        <Stack.Screen options={{ headerShown: false }} />
         <ActivityIndicator size="large" color="#0B5394" />
       </View>
     );
   }
 
-  if (error || !lugar) {
+  if (!lugar || !lugar.nombre) {
     return (
-      <View style={[estilos.contenedor, estilos.centrado]}>
-        <Text style={estilos.textoError}>{error ?? 'No se encontró la información del lugar.'}</Text>
-        <Pressable style={estilos.botonVolverTexto} onPress={() => router.back()}>
-          <Text style={estilos.textoBotonAzul}>Volver</Text>
+      <View style={estilos.centrado}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <Text style={estilos.textoError}>No se pudo encontrar el lugar solicitado.</Text>
+        <Pressable style={estilos.botonVolver} onPress={() => router.back()}>
+          <Text style={estilos.textoBoton}>Volver</Text>
         </Pressable>
       </View>
     );
   }
 
+  // --- BUSQUEDA Y FORMATEO DE DATOS ---
+  const lat = Number(String(lugar.coordenadas?.latitud ?? (lugar.coordenadas as any)?.lat ?? '-32.2230').replace(',', '.'));
+  const lng = Number(String(lugar.coordenadas?.longitud ?? (lugar.coordenadas as any)?.lng ?? '-58.1415').replace(',', '.'));
+
+  const abrirGoogleMaps = () => {
+    Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`);
+  };
+
+  const llamar = () => {
+    const telefono = (lugar as any).telefono || (lugar as any).contacto?.telefono || (lugar as any).contacto?.tel;
+    if (telefono) {
+      const telLimpio = String(telefono).replace(/[^0-9+]/g, '');
+      Linking.openURL(`tel:${telLimpio}`);
+    } else {
+      Alert.alert('No disponible', 'Este lugar no tiene un número de teléfono registrado.');
+    }
+  };
+
+  const abrirWeb = () => {
+    const web = (lugar as any).sitioWeb || (lugar as any).web || (lugar as any).contacto?.sitioWeb || (lugar as any).contacto?.web || (lugar as any).url;
+    if (web) {
+      let urlFinal = String(web).trim();
+      if (!urlFinal.startsWith('http://') && !urlFinal.startsWith('https://')) {
+        urlFinal = `https://${urlFinal}`;
+      }
+      Linking.openURL(urlFinal).catch(() => {
+        Alert.alert('Error', 'No se pudo abrir el sitio web.');
+      });
+    } else {
+      Alert.alert('No disponible', 'Este lugar no tiene un sitio web registrado.');
+    }
+  };
+
+  const abrirAudioguia = () => {
+    const audio = (lugar as any).audioguia || (lugar as any).audioguiaUrl || (lugar as any).audioUrl || (lugar as any).audio;
+    if (audio) {
+      let urlFinal = String(audio).trim();
+      if (!urlFinal.startsWith('http://') && !urlFinal.startsWith('https://')) {
+        urlFinal = `https://${urlFinal}`;
+      }
+      Linking.openURL(urlFinal).catch(() => {
+        Alert.alert('Error', 'No se pudo reproducir la audioguía.');
+      });
+    } else {
+      Alert.alert('No disponible', 'La audioguía no está disponible para este lugar todavía.');
+    }
+  };
+
+  const htmlMapaLocal = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <style>
+          body { margin: 0; padding: 0; background-color: #E5E7EB; }
+          #map { width: 100vw; height: 100vh; }
+          .leaflet-control-attribution { display: none; }
+        </style>
+      </head>
+      <body>
+        <div id="map"></div>
+        <script>
+          var map = L.map('map', { zoomControl: false, dragging: false }).setView([${lat}, ${lng}], 15);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+          L.marker([${lat}, ${lng}]).addTo(map);
+        </script>
+      </body>
+    </html>
+  `;
+
   return (
-    <View style={estilos.contenedor}>
+    <View style={estilos.contenedorPrincipal}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={estilos.contenedorImagen}>
-        <Image 
-          source={{ uri: lugar.imagenes && lugar.imagenes.length > 0 ? lugar.imagenes[0] : 'https://via.placeholder.com/400x250?text=Sin+Imagen' }} 
-          style={estilos.imagen} 
-          resizeMode="cover"
-        />
-        <Pressable style={estilos.botonVolverFlotante} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#FFF" />
-        </Pressable>
-      </View>
+      <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
+        
+        {/* Cabecera */}
+        <View style={estilos.imagenHeader}>
+          <Pressable style={[estilos.botonFlotante, { left: 16 }]} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color="#1C1C1E" />
+          </Pressable>
 
-      <ScrollView style={estilos.contenido} showsVerticalScrollIndicator={false}>
-        
-        <Text style={estilos.titulo}>{lugar.nombre}</Text>
-        
-        <View style={estilos.tarjetaInfo}>
-          <View style={estilos.filaInfo}>
-            <Ionicons name="location-outline" size={20} color="#5C6B7A" />
-            <Text style={estilos.textoInfo}>{lugar.direccion || 'Dirección no disponible'}</Text>
-          </View>
-          
-          <View style={estilos.filaInfo}>
-            <Ionicons name="ticket-outline" size={20} color="#5C6B7A" />
-            <Text style={estilos.textoInfo}>
-              {lugar.precioEntrada === 0 ? 'Entrada gratuita' : lugar.precioEntrada ? `$${lugar.precioEntrada}` : 'Consultar precio'}
-            </Text>
-          </View>
+          <Pressable style={[estilos.botonFlotante, { right: 16 }]} onPress={alternarFavorito}>
+            {cargandoFavorito ? (
+              <ActivityIndicator size="small" color="#E63946" />
+            ) : (
+              <Ionicons name={esFavorito ? "heart" : "heart-outline"} size={24} color={esFavorito ? "#E63946" : "#1C1C1E"} />
+            )}
+          </Pressable>
+          <Ionicons name="image-outline" size={60} color="#9CA3AF" />
         </View>
 
-        {/* ---> NUEVO: Llamamos al componente reproductor si hay audio <--- */}
-        {lugar.audioguia && <ReproductorAudioguia audioguia={lugar.audioguia} />}
+        {/* Cuerpo */}
+        <View style={estilos.cuerpo}>
+          
+          <Text style={estilos.nombreLugar}>{String(lugar.nombre)}</Text>
 
-        <Text style={estilos.subtitulo}>Sobre este lugar</Text>
-        <Text style={estilos.descripcion}>{lugar.descripcion || lugar.descripcionCorta}</Text>
+          {/* Horarios Formateados */}
+          <View style={estilos.filaDato}>
+            <Ionicons name="time-outline" size={20} color="#6B7280" />
+            <Text style={estilos.textoDato}>
+              {formatearHorarios((lugar as any).horario || (lugar as any).horarios)}
+            </Text>
+          </View>
 
+          {/* Dirección */}
+          <View style={estilos.filaDato}>
+            <Ionicons name="location-outline" size={20} color="#6B7280" />
+            <Text style={estilos.textoDato}>
+              {lugar.direccion ? String(lugar.direccion) : 'Ubicación en mapa'}
+            </Text>
+          </View>
+
+          {/* Mapa de Leaflet */}
+          <View style={estilos.contenedorMapa}>
+            <WebView
+              source={{ html: htmlMapaLocal }}
+              style={{ flex: 1 }}
+              scrollEnabled={false}
+            />
+          </View>
+
+          {/* Botón Google Maps */}
+          <Pressable style={estilos.botonGoogleMaps} onPress={abrirGoogleMaps}>
+            <Ionicons name="navigate-circle" size={22} color="#FFFFFF" />
+            <Text style={estilos.textoBotonAzul}>Abrir en Google Maps</Text>
+          </Pressable>
+
+          {/* Acciones: Llamar y Web */}
+          <View style={estilos.filaAcciones}>
+            <Pressable style={estilos.botonAccionMitad} onPress={llamar}>
+              <Ionicons name="call-outline" size={20} color="#374151" />
+              <Text style={estilos.textoBotonAccion}>Llamar</Text>
+            </Pressable>
+            <Pressable style={estilos.botonAccionMitad} onPress={abrirWeb}>
+              <Ionicons name="globe-outline" size={20} color="#374151" />
+              <Text style={estilos.textoBotonAccion}>Sitio web</Text>
+            </Pressable>
+          </View>
+
+          {/* Tarjeta Audioguía */}
+          <Pressable style={estilos.tarjetaAudioguia} onPress={abrirAudioguia}>
+            <Ionicons name="play-circle" size={44} color="#0B5394" />
+            <View>
+              <Text style={estilos.tituloAudioguia}>Audioguía disponible</Text>
+              <Text style={estilos.subtituloAudioguia}>Tocar para escuchar</Text>
+            </View>
+          </Pressable>
+
+          {/* Descripción */}
+          <Text style={estilos.tituloSeccion}>Descripción</Text>
+          <Text style={estilos.descripcionLugar}>
+            {lugar.descripcion ? String(lugar.descripcion) : (lugar.descripcionCorta ? String(lugar.descripcionCorta) : 'No hay información adicional.')}
+          </Text>
+
+          {/* Botón Registrar Visita */}
+          <Pressable 
+            style={estilos.botonVisita} 
+            onPress={() => router.push(`/registro-visita/${id}` as any)}
+          >
+            <Ionicons name="camera" size={20} color="#FFFFFF" />
+            <Text style={estilos.textoBotonVisita}>Registrar Visita</Text>
+          </Pressable>
+
+        </View>
       </ScrollView>
     </View>
   );
 }
 
 const estilos = StyleSheet.create({
-  contenedor: { flex: 1, backgroundColor: '#F2F2F7' },
-  centrado: { justifyContent: 'center', alignItems: 'center', padding: 20 },
-  textoError: { fontSize: 16, color: '#4B5563', marginBottom: 20 },
-  botonVolverTexto: { padding: 12, backgroundColor: '#EBF3FB', borderRadius: 8 },
-  textoBotonAzul: { color: '#0B5394', fontWeight: 'bold' },
-  
-  contenedorImagen: {
-    width: '100%',
-    height: 250,
-    position: 'relative',
-  },
-  imagen: {
-    width: '100%',
-    height: '100%',
-  },
-  botonVolverFlotante: {
-    position: 'absolute',
-    top: 40,
-    left: 16,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  
-  contenido: {
-    flex: 1,
-    padding: 20,
-    marginTop: -20,
-    backgroundColor: '#F2F2F7',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  titulo: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#1C1C1E',
-    marginBottom: 16,
-  },
-  tarjetaInfo: {
-    backgroundColor: '#FFF',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#E5E5EA',
-    gap: 12,
-  },
-  filaInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  textoInfo: {
-    fontSize: 15,
-    color: '#4B5563',
-    marginLeft: 10,
-    flex: 1,
-  },
-  
-  cajaAudioguia: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#EBF3FB',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#B9D5F0',
-  },
-  // ---> NUEVO: Estilo para el botón circular de Play <---
-  botonPlay: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#0B5394',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingLeft: 4, // Centra visualmente el triángulo del play
-  },
-  textoAudioguiaTitulo: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#0B5394',
-  },
-  textoAudioguiaSub: {
-    fontSize: 14,
-    color: '#5C6B7A',
-    marginTop: 2,
-  },
-
-  subtitulo: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1C1C1E',
-    marginBottom: 8,
-  },
-  descripcion: {
-    fontSize: 15,
-    lineHeight: 24,
-    color: '#4B5563',
-    marginBottom: 40,
-  },
+  contenedorPrincipal: { flex: 1, backgroundColor: '#FFFFFF' },
+  centrado: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  imagenHeader: { height: 280, backgroundColor: '#E5E5EA', justifyContent: 'center', alignItems: 'center', position: 'relative' },
+  botonFlotante: { position: 'absolute', top: 50, backgroundColor: 'rgba(255, 255, 255, 0.9)', padding: 10, borderRadius: 20, zIndex: 10, elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4 },
+  cuerpo: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, marginTop: -24, padding: 20, minHeight: 600 },
+  nombreLugar: { fontSize: 26, fontWeight: 'bold', color: '#1C1C1E', marginBottom: 16 },
+  filaDato: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
+  textoDato: { fontSize: 15, color: '#5C6B7A', flex: 1 },
+  contenedorMapa: { height: 160, borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#E5E5EA', marginVertical: 16, backgroundColor: '#E5E7EB' },
+  botonGoogleMaps: { flexDirection: 'row', backgroundColor: '#0B5394', padding: 14, borderRadius: 10, justifyContent: 'center', alignItems: 'center', gap: 8, marginBottom: 16 },
+  textoBotonAzul: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
+  filaAcciones: { flexDirection: 'row', gap: 12, marginBottom: 24 },
+  botonAccionMitad: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#E5E5EA', gap: 8 },
+  textoBotonAccion: { fontSize: 15, fontWeight: '600', color: '#374151' },
+  tarjetaAudioguia: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', padding: 16, borderRadius: 12, gap: 16, marginBottom: 24 },
+  tituloAudioguia: { fontSize: 16, fontWeight: 'bold', color: '#1C1C1E' },
+  subtituloAudioguia: { fontSize: 14, color: '#5C6B7A', marginTop: 2 },
+  tituloSeccion: { fontSize: 18, fontWeight: 'bold', color: '#1C1C1E', marginBottom: 8 },
+  descripcionLugar: { fontSize: 15, color: '#374151', lineHeight: 24, paddingBottom: 24 },
+  botonVisita: { flexDirection: 'row', backgroundColor: '#0B5394', padding: 16, borderRadius: 12, alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 40 },
+  textoBotonVisita: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
+  textoError: { fontSize: 16, color: '#374151', marginBottom: 16 },
+  botonVolver: { backgroundColor: '#0B5394', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
+  textoBoton: { color: '#FFFFFF', fontWeight: 'bold' },
 });

@@ -1,52 +1,67 @@
 // src/servicios/auth.ts
-import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
 
-const CLAVE_TOKEN = 'mi_ciudad_token_sesion';
+const BASE_URL = 'http://192.168.1.4:3000'; 
 
 export const authService = {
-  // 1. Iniciar sesión tradicional (simulado contra la API)
-  iniciarSesion: async (correo: string, contrasena: string): Promise<boolean> => {
-    // Simulamos la demora del servidor
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // Hardcodeamos un usuario de prueba hasta que esté la API real
-    if (correo === 'alumno@uner.edu.ar' && contrasena === '123456') {
-      const tokenSimulado = 'abc-123-xyz-987';
-      // Guardamos el token cifrado en el dispositivo
-      await SecureStore.setItemAsync(CLAVE_TOKEN, tokenSimulado);
-      return true;
+  obtenerToken: async () => {
+    try {
+      return await SecureStore.getItemAsync('token_sesion');
+    } catch (error) {
+      return null;
     }
-    return false;
   },
 
-  // 2. Leer el token al arrancar la app
-  obtenerToken: async (): Promise<string | null> => {
-    return await SecureStore.getItemAsync(CLAVE_TOKEN);
+  iniciarSesion: async (correo: string, contrasena: string): Promise<boolean> => {
+    try {
+      console.log("Enviando credenciales para:", correo.trim());
+
+const respuesta = await fetch(`${BASE_URL}/auth/ingreso`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: correo.trim(), 
+          contrasena: contrasena 
+        })
+      });
+
+      const datos = await respuesta.json();
+      console.log("Respuesta completa del servidor:", datos);
+
+      if (!respuesta.ok) {
+        return false;
+      }
+      
+      // Buscamos el token en las distintas formas comunes que devuelven las APIs
+      const token = datos.datos?.token || datos.token || datos.access_token;
+      const usuarioInfo = datos.datos?.usuario || datos.datos;
+
+      if (token) {
+        await SecureStore.setItemAsync('token_sesion', token);
+      // Guardamos también la info del usuario en formato JSON para leerla en las pantallas
+  if (usuarioInfo) {
+    await SecureStore.setItemAsync('usuario_info', JSON.stringify(usuarioInfo));
+  }
+  return true;
+}
+      
+      return false;
+    } catch (error) {
+      console.error("Error al conectar con la API de login:", error);
+      return false;
+    }
   },
 
-  // 3. Cerrar sesión borrando el rastro
-  cerrarSesion: async (): Promise<void> => {
-    await SecureStore.deleteItemAsync(CLAVE_TOKEN);
-  },
-
-  // 4. Reingreso con Biometría (Huella/Rostro)
   autenticarConBiometria: async (): Promise<boolean> => {
-    // Verificamos si el equipo tiene lector físico
-    const hardwareCompatible = await LocalAuthentication.hasHardwareAsync();
-    if (!hardwareCompatible) return false;
+    const token = await SecureStore.getItemAsync('token_sesion');
+    return token !== null;
+  },
 
-    // Verificamos si el usuario tiene registrada su huella o rostro en el celular
-    const huellaRegistrada = await LocalAuthentication.isEnrolledAsync();
-    if (!huellaRegistrada) return false;
-
-    // Disparamos el cartel nativo del sistema operativo
-    const resultado = await LocalAuthentication.authenticateAsync({
-      promptMessage: 'Reingresá a Mi Ciudad',
-      fallbackLabel: 'Usar PIN o contraseña', // La alternativa exigida por el PRD
-      cancelLabel: 'Cancelar',
-    });
-
-    return resultado.success;
+  cerrarSesion: async () => {
+    try {
+      await SecureStore.deleteItemAsync('token_sesion');
+    } catch (error) {
+      console.error("Error al cerrar sesión", error);
+    }
   }
 };

@@ -1,16 +1,21 @@
-export interface MetaPaginacion {
+// src/tipos/api.ts
+
+export interface Meta {
   total: number;
   pagina: number;
   porPagina: number;
 }
 
-// Respuesta de éxito de la API
-export interface RespuestaPaginada<T> {
+export interface RespuestaLista<T> {
   datos: T[];
-  meta: MetaPaginacion;
+  meta: Meta;
 }
 
-// Respuesta de error de la API
+export interface RespuestaUno<T> {
+  datos: T;
+  meta: null;
+}
+
 export interface RespuestaError {
   error: {
     codigo: string;
@@ -18,14 +23,10 @@ export interface RespuestaError {
   };
 }
 
-// Error que lanzan los servicios, para atraparlo en las pantallas
 export class ErrorApi extends Error {
   codigo: string;
-
   constructor(codigo: string, mensaje: string) {
     super(mensaje);
-    this.name = 'ErrorApi';
     this.codigo = codigo;
-    Object.setPrototypeOf(this, ErrorApi.prototype);
   }
 }

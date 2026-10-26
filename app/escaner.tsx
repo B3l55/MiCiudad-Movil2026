@@ -8,12 +8,12 @@ export default function PantallaEscaner() {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
 
-  // Si los permisos todavía no se cargaron
+
   if (!permission) {
     return <View style={estilos.centrado}><Text>Cargando permisos...</Text></View>;
   }
 
-  // Si el usuario denegó el permiso de la cámara
+
   if (!permission.granted) {
     return (
       <View style={estilos.centrado}>
@@ -32,7 +32,7 @@ export default function PantallaEscaner() {
 
     if (data.startsWith('COLON:')) {
       const idLugar = data.split(':')[1];
-      router.replace({ pathname: "/registro-visita/[id]", params: { id: idLugar } });
+      router.replace(`/lugares/${idLugar}`);
     } else {
       alert("Código no reconocido. Este QR no pertenece a la Guía Turística de Colón.");
       setTimeout(() => setScanned(false), 2000); 

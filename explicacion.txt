@@ -24,3 +24,8 @@ y es ideal para envolver toda la aplicación con proveedores de sesión o datos 
 
 Para resumirlo: index.tsx es la foto (tu contenido), y _layout.tsx es el marco
  (la navegación y los menús que rodean esa foto).
+
+
+ Escáner QR (/escaner): Implementar la vista del lector de códigos QR que ya tenés enlazada en el botón superior del inicio.
+
+Agenda de Eventos: Revisar si la API del profesor incluye endpoints de eventos o actividades para armar la cartelera turística de la ciudad.
