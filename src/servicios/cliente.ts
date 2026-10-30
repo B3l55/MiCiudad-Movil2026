@@ -2,7 +2,7 @@
 import * as SecureStore from 'expo-secure-store';
 
 // REVISÁ QUE ESTA SEA TU IP LOCAL EXACTA (ipconfig en PowerShell)
-export const BASE_URL = 'http://192.168.1.4:3000'; 
+import { BASE_URL } from '../config/api'; 
 
 export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   try {

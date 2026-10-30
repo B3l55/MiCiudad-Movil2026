@@ -1,8 +1,7 @@
 // src/servicios/eventosGuardados.ts
 import * as SecureStore from 'expo-secure-store';
 
-// Recordá usar la IP correcta donde corre tu Docker
-const BASE_URL = 'http://192.168.1.4:3000';
+import { BASE_URL } from '../config/api';
 
 async function obtenerHeaders() {
   const token = await SecureStore.getItemAsync('token_sesion');
@@ -13,11 +12,11 @@ async function obtenerHeaders() {
 }
 
 export const eventosGuardadosServicio = {
-  // 1. Obtiene los IDs de los eventos guardados por el usuario logueado
-  obtenerGuardados: async (): Promise<string[]> => {
+  // GET /yo/eventos-guardados
+  obtenerGuardados: async (): Promise<any[]> => {
     try {
       const headers = await obtenerHeaders();
-      const respuesta = await fetch(`${BASE_URL}/eventos-guardados`, {
+      const respuesta = await fetch(`${BASE_URL}/yo/eventos-guardados`, {
         method: 'GET',
         headers,
       });
@@ -25,51 +24,50 @@ export const eventosGuardadosServicio = {
       if (!respuesta.ok) return [];
 
       const json = await respuesta.json();
-      
-      // Ajustá 'item.eventoId' o 'item.id' según la estructura que devuelva el Swagger
-      if (json.datos) {
-        return json.datos.map((item: any) => item.eventoId || item.id);
-      }
-      return [];
+      const lista = json.datos || json;
+      return Array.isArray(lista) ? lista : [];
     } catch (error) {
-      console.error('Error al obtener eventos guardados:', error);
+      console.error('Error al obtener guardados:', error);
       return [];
     }
   },
-  
-  // 2. Verifica si un evento específico está guardado
+
   esGuardado: async (id: string): Promise<boolean> => {
     const guardados = await eventosGuardadosServicio.obtenerGuardados();
-    return guardados.includes(id);
+    return guardados.some((item: any) => {
+      const itemID = item.id || item.eventoId || item._id || item;
+      return String(itemID) === String(id);
+    });
   },
 
-  // 3. Agrega o elimina el evento consultando directamente a la API
+  // PUT /yo/eventos-guardados/:eventoId | DELETE /yo/eventos-guardados/:eventoId
   alternarGuardado: async (id: string): Promise<boolean> => {
     try {
       const guardadoActualmente = await eventosGuardadosServicio.esGuardado(id);
       const headers = await obtenerHeaders();
 
       if (guardadoActualmente) {
-        // Eliminar evento guardado
-        const respuesta = await fetch(`${BASE_URL}/eventos-guardados/${id}`, {
+        const respuesta = await fetch(`${BASE_URL}/yo/eventos-guardados/${id}`, {
           method: 'DELETE',
           headers,
         });
-        if (!respuesta.ok) throw new Error('Error al eliminar');
-        return false; // Retorna false porque ya no está guardado
+        if (!respuesta.ok) throw new Error('Error al quitar de guardados');
+        return false;
       } else {
-        // Agregar evento guardado
-        const respuesta = await fetch(`${BASE_URL}/eventos-guardados`, {
-          method: 'POST',
+        const respuesta = await fetch(`${BASE_URL}/yo/eventos-guardados/${id}`, {
+          method: 'PUT',
           headers,
-          body: JSON.stringify({ eventoId: id }),
         });
-        if (!respuesta.ok) throw new Error('Error al guardar');
-        return true; // Retorna true porque ahora está guardado
+
+        if (!respuesta.ok) {
+          const errJson = await respuesta.json().catch(() => ({}));
+          throw new Error(errJson.mensaje || 'No se puede guardar este evento.');
+        }
+        return true;
       }
     } catch (error) {
-      console.error('Error al alternar evento guardado:', error);
-      return false;
+      console.error('Error al guardar/eliminar evento:', error);
+      throw error;
     }
   }
 };

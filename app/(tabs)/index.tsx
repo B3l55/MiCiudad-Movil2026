@@ -18,6 +18,7 @@ import { WebView } from 'react-native-webview';
 
 import { categoriasServicio } from '../../src/servicios/categoria';
 import { lugaresServicio } from '../../src/servicios/lugares';
+import { usuarioServicio } from '../../src/servicios/usuario';
 import { Categoria } from '../../src/tipos/categorias';
 import { Lugar } from '../../src/tipos/lugares';
 
@@ -28,6 +29,7 @@ export default function PantallaInicio() {
   const [busqueda, setBusqueda] = useState('');
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string | null>(null);
   const [categoriasFavoritas, setCategoriasFavoritas] = useState<string[]>([]);
+  const [nombreUsuario, setNombreUsuario] = useState<string>('');
 
   useFocusEffect(
     useCallback(() => {
@@ -35,29 +37,28 @@ export default function PantallaInicio() {
       const cargarDatosYPreferencias = async () => {
         setCargando(true);
         try {
-          // 1. Cargamos las preferencias del usuario logueado desde SecureStore
+          // 1. Cargamos las preferencias guardadas en SecureStore
           const infoStr = await SecureStore.getItemAsync('usuario_info');
           if (infoStr && !cancelado) {
             const usuario = JSON.parse(infoStr);
             if (usuario.preferencias?.categoriasFavoritas) {
               setCategoriasFavoritas(usuario.preferencias.categoriasFavoritas);
-              // Si el usuario tiene una categoría favorita principal, la podemos dejar preseleccionada opcionalmente
-              if (usuario.preferencias.categoriasFavoritas.length > 0 && !categoriaSeleccionada) {
-                // Descomentá la línea de abajo si querés que filtre por su primera categoría favorita por defecto:
-                // setCategoriaSeleccionada(usuario.preferencias.categoriasFavoritas[0]);
-              }
             }
           }
 
-          // 2. Cargamos lugares y categorías del servidor
-          const [resLugares, resCategorias] = await Promise.all([
+          // 2. Cargamos lugares, categorías y perfil desde el servidor
+          const [resLugares, resCategorias, perfil] = await Promise.all([
             lugaresServicio.obtenerLugares(),
             categoriasServicio.obtenerCategorias(),
+            usuarioServicio.obtenerPerfil().catch(() => null),
           ]);
 
           if (!cancelado) {
             setLugares(resLugares.datos || []);
             setCategorias(resCategorias.datos || []);
+            if (perfil?.nombre) {
+              setNombreUsuario(perfil.nombre);
+            }
           }
         } catch (error) {
           console.log('Error al cargar datos:', error);
@@ -110,31 +111,25 @@ export default function PantallaInicio() {
     </html>
   `;
 
-  // Función para manejar el botón de usuario (cierra sesión y vuelve al login)
-  const manejarAccionUsuario = async () => {
-    try {
-      await SecureStore.deleteItemAsync('token_sesion');
-      await SecureStore.deleteItemAsync('usuario_info');
-      router.replace('/login' as any);
-    } catch (error) {
-      router.replace('/login' as any);
-    }
-  };
-
   return (
     <SafeAreaView style={estilos.contenedor} edges={['top']}>
       <View style={estilos.header}>
-        <Text style={estilos.tituloHeader}>Colón</Text>
+        <View>
+          <Text style={estilos.subtituloHeader}>
+            {nombreUsuario ? `¡Bienvenido/a, ${nombreUsuario}!` : '¡Bienvenido/a!'}
+          </Text>
+          <Text style={estilos.tituloHeader}>Colón</Text>
+        </View>
         
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <Pressable style={estilos.botonQR} onPress={() => router.push('/escaner')}>
+          <Pressable style={estilos.botonQR} onPress={() => router.push('/escaner' as any)}>
             <Ionicons name="qr-code-outline" size={20} color="#0B5394" />
             <Text style={estilos.textoBotonQR}>QR</Text>
           </Pressable>
 
           <Pressable 
             style={[estilos.botonQR, { paddingHorizontal: 8 }]} 
-            onPress={manejarAccionUsuario}
+            onPress={() => router.push('/perfil' as any)}
           >
             <Ionicons name="person-outline" size={20} color="#0B5394" />
           </Pressable>
@@ -174,7 +169,6 @@ export default function PantallaInicio() {
                 style={[
                   estilos.chipCategoria, 
                   activa && estilos.chipCategoriaActiva,
-                  // Opcional: Resaltar visualmente si es categoría favorita del usuario logueado
                   esFavoritaUsuario && !activa && { borderColor: '#0B5394', borderWidth: 2 }
                 ]}
                 onPress={() => setCategoriaSeleccionada(activa ? null : cat.id)}
@@ -232,6 +226,7 @@ const estilos = StyleSheet.create({
   contenedor: { flex: 1, backgroundColor: '#F2F2F7' },
   centrado: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
+  subtituloHeader: { fontSize: 13, color: '#6B7280', fontWeight: '500' },
   tituloHeader: { fontSize: 26, fontWeight: 'bold', color: '#0B5394' },
   botonQR: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#EBF3FB', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   textoBotonQR: { color: '#0B5394', fontWeight: 'bold', fontSize: 14 },

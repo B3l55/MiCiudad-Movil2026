@@ -1,5 +1,5 @@
 // app/(auth)/login.tsx
-import Ionicons from '@react-native-vector-icons/ionicons';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, ImageBackground, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -41,7 +41,6 @@ export default function Login() {
       if (exito) {
         router.replace('/(tabs)'); 
       } else {
-        // Reemplazá la línea anterior por esta:
         setError("Correo electrónico o contraseña incorrectos.");
       }
     } catch (err) {
@@ -63,15 +62,13 @@ export default function Login() {
 
   return (
     <ImageBackground 
-      source={require('../../assets/images/colon.jpg')} // URL de prueba, después podés poner un require()
+      source={require('../../assets/images/colon.jpg')}
       style={estilos.contenedor}
       resizeMode="cover"
     >
-      {/* Esta capa oscura es fundamental para que el formulario se lea bien contra la foto */}
       <View style={estilos.capaOscura}>
         
         <View style={estilos.cajaIcono}>
-          {/* Ícono en color blanco */}
           <Ionicons name="location-outline" size={64} color="#FFFFFF" /> 
         </View>
         <Text style={estilos.titulo}>Ingresar a Mi Ciudad</Text>
@@ -110,20 +107,22 @@ export default function Login() {
 
           {haySesionPrevia && (
             <Pressable style={estilos.botonBiometria} onPress={manejarBiometria}>
-              {/* Ícono de biometría pasado a blanco */}
               <Ionicons name="finger-print-outline" size={24} color="#FFFFFF" />
               <Text style={estilos.textoBiometria}>Reingresar con biometría</Text>
             </Pressable>
           )}
         </View>
-          <Pressable 
-            style={{ marginTop: 12, paddingVertical: 8 }} 
-            onPress={() => alert('El registro de usuarios se habilitará en la próxima etapa.')}
-          >
-            <Text style={{ color: '#FFFFFF', textAlign: 'center', fontSize: 14, textDecorationLine: 'underline' }}>
-              ¿No tenés cuenta? Registrate acá
-            </Text>
-          </Pressable>
+        
+        {/* BOTÓN MODIFICADO PARA NAVEGAR AL REGISTRO */}
+        <Pressable 
+          style={{ marginTop: 12, paddingVertical: 8 }} 
+          onPress={() => router.push('/registro')}
+        >
+          <Text style={{ color: '#FFFFFF', textAlign: 'center', fontSize: 14, textDecorationLine: 'underline' }}>
+            ¿No tenés cuenta? Registrate acá
+          </Text>
+        </Pressable>
+
       </View>
     </ImageBackground>
   );
@@ -132,13 +131,12 @@ export default function Login() {
 const estilos = StyleSheet.create({
   contenedor: {
     flex: 1,
-    // Eliminamos backgroundColor, justifyContent y padding de acá
   },
   capaOscura: {
     flex: 1,
     justifyContent: 'center',
     padding: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // 50% de opacidad negra sobre la foto
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   cajaIcono: {
     alignItems: 'center',
@@ -147,7 +145,7 @@ const estilos = StyleSheet.create({
   titulo: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#FFFFFF', // Pasado a blanco para que contraste
+    color: '#FFFFFF',
     textAlign: 'center',
     marginBottom: 32,
   },
@@ -184,7 +182,7 @@ const estilos = StyleSheet.create({
     gap: 8,
   },
   textoBiometria: {
-    color: '#FFFFFF', // Pasado a blanco para que contraste
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },

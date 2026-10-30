@@ -1,7 +1,7 @@
 // src/servicios/favoritos.ts
 import * as SecureStore from 'expo-secure-store';
 
-const BASE_URL = 'http://192.168.1.4:3000'; // Ajustá según tu IP local
+import { BASE_URL } from '../config/api';
 
 async function obtenerHeaders() {
   const token = await SecureStore.getItemAsync('token_sesion');
@@ -12,10 +12,12 @@ async function obtenerHeaders() {
 }
 
 export const favoritosServicio = {
+  // 1. Obtener la lista de favoritos
   obtenerFavoritosIds: async (): Promise<string[]> => {
     try {
       const headers = await obtenerHeaders();
-      const respuesta = await fetch(`${BASE_URL}/favoritos`, {
+      // NOTA: Si en el Swagger la ruta se llama distinto, cambiala acá (ej: /yo/lugares-favoritos)
+      const respuesta = await fetch(`${BASE_URL}/yo/favoritos`, {
         method: 'GET',
         headers,
       });
@@ -23,12 +25,10 @@ export const favoritosServicio = {
       if (!respuesta.ok) return [];
 
       const json = await respuesta.json();
-
-      // Mapea flexiblemente para capturar lugarId, lugar_id, lugar.id o id
-      if (Array.isArray(json.datos)) {
-        return json.datos.map((fav: any) => 
-          fav.lugarId || fav.lugar_id || fav.lugar?.id || fav.id
-        ).filter(Boolean);
+      const lista = json.datos || json;
+      
+      if (Array.isArray(lista)) {
+        return lista.map((item: any) => String(item.lugarId || item.id || item));
       }
       return [];
     } catch (error) {
@@ -37,34 +37,35 @@ export const favoritosServicio = {
     }
   },
 
-  agregarFavorito: async (lugarId: string) => {
-    try {
-      const headers = await obtenerHeaders();
-      const respuesta = await fetch(`${BASE_URL}/favoritos`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ lugarId }),
-      });
-      if (!respuesta.ok) throw new Error('Error al agregar favorito');
-      return await respuesta.json();
-    } catch (error) {
-      console.error('Error al agregar favorito:', error);
-      throw error;
+  // 2. Agregar un favorito (PUT a la URL con el ID)
+  agregarFavorito: async (id: string): Promise<boolean> => {
+    const headers = await obtenerHeaders();
+    const respuesta = await fetch(`${BASE_URL}/yo/favoritos/${id}`, {
+      method: 'PUT',
+      headers,
+    });
+
+    if (!respuesta.ok) {
+      const detalle = await respuesta.text();
+      console.error(`❌ [ERROR PUT FAVORITOS ${respuesta.status}]:`, detalle);
+      throw new Error('Error al agregar favorito');
     }
+    return true;
   },
 
-  eliminarFavorito: async (lugarId: string) => {
-    try {
-      const headers = await obtenerHeaders();
-      const respuesta = await fetch(`${BASE_URL}/favoritos/${lugarId}`, {
-        method: 'DELETE',
-        headers,
-      });
-      if (!respuesta.ok) throw new Error('Error al eliminar favorito');
-      return await respuesta.json();
-    } catch (error) {
-      console.error('Error al eliminar favorito:', error);
-      throw error;
+  // 3. Eliminar un favorito (DELETE a la URL con el ID)
+  eliminarFavorito: async (id: string): Promise<boolean> => {
+    const headers = await obtenerHeaders();
+    const respuesta = await fetch(`${BASE_URL}/yo/favoritos/${id}`, {
+      method: 'DELETE',
+      headers,
+    });
+
+    if (!respuesta.ok) {
+      const detalle = await respuesta.text();
+      console.error(`❌ [ERROR DELETE FAVORITOS ${respuesta.status}]:`, detalle);
+      throw new Error('Error al eliminar favorito');
     }
+    return true;
   }
 };

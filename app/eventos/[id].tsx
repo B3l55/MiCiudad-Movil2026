@@ -1,8 +1,9 @@
 // app/eventos/[id].tsx
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { eventosServicio } from '../../src/servicios/eventos';
@@ -33,7 +34,7 @@ const textoPrecio = (precio: number | null | undefined) => {
 
 const MENSAJES_ESTADO: Record<string, string> = {
   cancelado: 'Este evento fue cancelado.',
-  suspendido: 'Este evento fue suspendido . Se reprograma.',
+  suspendido: 'Este evento fue suspendido. Se reprograma.',
   finalizado: 'Este evento ya finalizó.',
 };
 
@@ -46,13 +47,21 @@ export default function DetalleEvento() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [guardado, setGuardado] = useState(false);
+  
+  // 🚀 Estado para saber si es Turismo
+  const [esAdmin, setEsAdmin] = useState(false);
+  const [procesandoAdmin, setProcesandoAdmin] = useState(false);
 
   useEffect(() => {
     const cargar = async () => {
       try {
+        // Chequeamos si es la cuenta de turismo usando el email guardado en la sesión
+        const emailUsuario = await SecureStore.getItemAsync('email_usuario'); // Ajustá esta clave si guardás el email con otro nombre
+        if (emailUsuario === 'turismo@colon.demo.ar') {
+          setEsAdmin(true);
+        }
+
         const respuesta: any = await eventosServicio.obtenerEventoPorId(id);
-        
-        // 🚀 Desempaquetado seguro de .datos si la API envía la respuesta envuelta
         const e = respuesta.datos || respuesta;
         setEvento(e);
 
@@ -87,6 +96,34 @@ export default function DetalleEvento() {
     }
   };
 
+  // 🚀 Función para manejar los botones de administración
+  const cambiarEstadoAdmin = async (nuevoEstado: 'suspendido' | 'cancelado') => {
+    Alert.alert(
+      `¿${nuevoEstado === 'cancelado' ? 'Cancelar' : 'Suspender'} evento?`,
+      `Estás por marcar el evento como ${nuevoEstado}. Esta acción será visible para todos los usuarios.`,
+      [
+        { text: 'Volver', style: 'cancel' },
+        {
+          text: 'Sí, confirmar',
+          style: 'destructive',
+          onPress: async () => {
+            setProcesandoAdmin(true);
+            try {
+              await eventosServicio.actualizarEstado(String(id), nuevoEstado);
+              // Actualizamos la pantalla sin recargar
+              setEvento((prev: any) => ({ ...prev, estado: nuevoEstado }));
+              Alert.alert('Éxito', `Evento marcado como ${nuevoEstado}.`);
+            } catch (err: any) {
+              Alert.alert('Error', err.message || 'No se pudo actualizar el estado.');
+            } finally {
+              setProcesandoAdmin(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   if (cargando) {
     return (
       <View style={[estilos.contenedor, estilos.centrado]}>
@@ -108,7 +145,6 @@ export default function DetalleEvento() {
     );
   }
 
-  // Mapeo seguro de campos por si variaron en la base de datos
   const estado = evento.estado || 'programado';
   const avisoEstado = MENSAJES_ESTADO[estado] ?? null;
   const anulado = estado === 'cancelado' || estado === 'suspendido';
@@ -188,6 +224,32 @@ export default function DetalleEvento() {
           <Ionicons name="ticket-outline" size={20} color="#0B5394" />
           <Text style={estilos.textoInfoExtra}>{textoPrecio(precio)}</Text>
         </View>
+
+        {/* 🚀 Panel de Administración Exclusivo para Turismo */}
+        {esAdmin && !anulado && (
+          <View style={estilos.panelAdmin}>
+            <Text style={estilos.tituloAdmin}>Acciones de Turismo</Text>
+            <View style={estilos.filaBotonesAdmin}>
+              <Pressable
+                style={[estilos.botonAdmin, estilos.botonSuspender, procesandoAdmin && estilos.botonDeshabilitado]}
+                onPress={() => cambiarEstadoAdmin('suspendido')}
+                disabled={procesandoAdmin}
+              >
+                <Ionicons name="pause-circle-outline" size={20} color="#9A3412" />
+                <Text style={estilos.textoBotonSuspender}>Suspender</Text>
+              </Pressable>
+              
+              <Pressable
+                style={[estilos.botonAdmin, estilos.botonCancelar, procesandoAdmin && estilos.botonDeshabilitado]}
+                onPress={() => cambiarEstadoAdmin('cancelado')}
+                disabled={procesandoAdmin}
+              >
+                <Ionicons name="close-circle-outline" size={20} color="#991B1B" />
+                <Text style={estilos.textoBotonCancelar}>Cancelar</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
       </ScrollView>
 
       {puedeGuardar && (
@@ -212,6 +274,7 @@ export default function DetalleEvento() {
 }
 
 const estilos = StyleSheet.create({
+  // ... (Tus estilos anteriores se mantienen intactos)
   contenedor: { flex: 1, backgroundColor: '#FFFFFF' },
   centrado: { justifyContent: 'center', alignItems: 'center', padding: 20 },
   textoError: { fontSize: 16, color: '#4B5563', marginBottom: 20, textAlign: 'center' },
@@ -255,7 +318,7 @@ const estilos = StyleSheet.create({
   valorDestacado: { fontSize: 16, color: '#1C1C1E', fontWeight: 'bold', marginTop: 2 },
   divisor: { height: 1, backgroundColor: '#E5E7EB', marginVertical: 16, marginLeft: 40 },
 
-botonVerLugar: {
+  botonVerLugar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -291,7 +354,7 @@ botonVerLugar: {
   botonGuardar: {
     flexDirection: 'row',
     alignItems: 'center',
-     justifyContent: 'center',
+    justifyContent: 'center',
     gap: 8,
     minHeight: 52,
     backgroundColor: '#0B5394',
@@ -299,4 +362,31 @@ botonVerLugar: {
   },
   botonGuardado: { backgroundColor: '#E8F5E9', borderWidth: 1, borderColor: '#4CAF50' },
   textoBotonGuardar: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 },
+
+  // 🚀 Nuevos estilos para el panel de Turismo
+  panelAdmin: {
+    marginTop: 32,
+    padding: 16,
+    backgroundColor: '#FEF2F2',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  tituloAdmin: { fontSize: 14, fontWeight: 'bold', color: '#991B1B', marginBottom: 12, textTransform: 'uppercase' },
+  filaBotonesAdmin: { flexDirection: 'row', gap: 12 },
+  botonAdmin: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  botonSuspender: { backgroundColor: '#FFF7ED', borderColor: '#FFEDD5' },
+  textoBotonSuspender: { color: '#9A3412', fontWeight: 'bold', fontSize: 14 },
+  botonCancelar: { backgroundColor: '#FEF2F2', borderColor: '#FECACA' },
+  textoBotonCancelar: { color: '#991B1B', fontWeight: 'bold', fontSize: 14 },
+  botonDeshabilitado: { opacity: 0.5 },
 });

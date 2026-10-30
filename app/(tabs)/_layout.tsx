@@ -1,7 +1,11 @@
+// app/(tabs)/_layout.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets(); // 👈 Definido correctamente antes del return
+
   return (
     <Tabs
       screenOptions={{
@@ -12,9 +16,10 @@ export default function TabLayout() {
           backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
           borderTopColor: '#E5E5EA',
-          paddingBottom: 5,
+          // 🚀 Altura adaptada para esquivar la barra de navegación de Android
+          height: 60 + (insets.bottom > 0 ? insets.bottom : 10),
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 5,
           paddingTop: 5,
-          height: 60,
         },
         tabBarLabelStyle: {
           fontSize: 12,
@@ -27,14 +32,21 @@ export default function TabLayout() {
       <Tabs.Screen name="agenda" options={{ title: 'Agenda', tabBarIcon: ({ color, size }) => (<Ionicons name="calendar" size={size} color={color} />) }} />
       <Tabs.Screen name="mis-eventos" options={{ title: 'Mis Eventos', tabBarIcon: ({ color, size }) => (<Ionicons name="bookmark" size={size} color={color} />) }} />
       <Tabs.Screen
-  name="recorrido"
-  options={{
-    title: 'Mi Recorrido',
-    tabBarIcon: ({ color, focused }) => (
-      <Ionicons name={focused ? 'map' : 'map-outline'} size={24} color={color} />
-    ),
-  }}
-/>
+        name="recorrido"
+        options={{
+          title: 'Mi Recorrido',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'map' : 'map-outline'} size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="perfil"
+        options={{
+          href: null, // Oculto de la barra inferior (se accede desde el inicio)
+          title: 'Perfil',
+        }}
+      />
     </Tabs>
   );
 }

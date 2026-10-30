@@ -1,3 +1,4 @@
+// app/(tabs)/agenda.tsx
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -47,7 +48,6 @@ export default function PantallaAgenda() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Carga todos los eventos una sola vez al entrar
   useFocusEffect(
     useCallback(() => {
       let cancelado = false;
@@ -56,7 +56,11 @@ export default function PantallaAgenda() {
         setError(null);
         try {
           const respuesta = await eventosServicio.obtenerEventos();
-          if (!cancelado) setTodosLosEventos(respuesta.datos || []);
+          if (!cancelado) {
+            // 🚀 Extraemos la propiedad datos para que nunca sea undefined
+            const lista = respuesta.datos || respuesta;
+            setTodosLosEventos(Array.isArray(lista) ? lista : []);
+          }
         } catch (err) {
           if (!cancelado) setError(err instanceof ErrorApi ? err.message : 'No se pudo cargar la agenda.');
         } finally {
@@ -68,10 +72,14 @@ export default function PantallaAgenda() {
     }, [])
   );
 
-  // Filtra localmente cuando cambia el día seleccionado
   useEffect(() => {
+    // 🚀 Validación para asegurar que todosLosEventos sea un array
+    if (!Array.isArray(todosLosEventos)) {
+      setEventosFiltrados([]);
+      return;
+    }
     const filtrados = todosLosEventos.filter(
-      evento => claveDia(new Date(evento.inicio)) === diaSeleccionado
+      evento => evento.inicio && claveDia(new Date(evento.inicio)) === diaSeleccionado
     );
     setEventosFiltrados(filtrados);
   }, [diaSeleccionado, todosLosEventos]);
