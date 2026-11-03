@@ -12,11 +12,11 @@ async function obtenerHeaders() {
 }
 
 export const favoritosServicio = {
-  // 1. Obtener la lista de favoritos
+  // Obtener la lista de favoritos
   obtenerFavoritosIds: async (): Promise<string[]> => {
     try {
       const headers = await obtenerHeaders();
-      // NOTA: Si en el Swagger la ruta se llama distinto, cambiala acá (ej: /yo/lugares-favoritos)
+      
       const respuesta = await fetch(`${BASE_URL}/yo/favoritos`, {
         method: 'GET',
         headers,
@@ -37,7 +37,7 @@ export const favoritosServicio = {
     }
   },
 
-  // 2. Agregar un favorito (PUT a la URL con el ID)
+  //  Agregar un favorito (PUT a la URL con el ID)
   agregarFavorito: async (id: string): Promise<boolean> => {
     const headers = await obtenerHeaders();
     const respuesta = await fetch(`${BASE_URL}/yo/favoritos/${id}`, {
@@ -47,13 +47,13 @@ export const favoritosServicio = {
 
     if (!respuesta.ok) {
       const detalle = await respuesta.text();
-      console.error(`❌ [ERROR PUT FAVORITOS ${respuesta.status}]:`, detalle);
+      console.error(` [ERROR PUT FAVORITOS ${respuesta.status}]:`, detalle);
       throw new Error('Error al agregar favorito');
     }
     return true;
   },
 
-  // 3. Eliminar un favorito (DELETE a la URL con el ID)
+  //  Eliminar un favorito (DELETE a la URL con el ID)
   eliminarFavorito: async (id: string): Promise<boolean> => {
     const headers = await obtenerHeaders();
     const respuesta = await fetch(`${BASE_URL}/yo/favoritos/${id}`, {
@@ -63,7 +63,7 @@ export const favoritosServicio = {
 
     if (!respuesta.ok) {
       const detalle = await respuesta.text();
-      console.error(`❌ [ERROR DELETE FAVORITOS ${respuesta.status}]:`, detalle);
+      console.error(` [ERROR DELETE FAVORITOS ${respuesta.status}]:`, detalle);
       throw new Error('Error al eliminar favorito');
     }
     return true;

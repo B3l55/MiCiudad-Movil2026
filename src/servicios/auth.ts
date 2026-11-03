@@ -1,12 +1,10 @@
 // src/servicios/auth.ts
-
-
+import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
 
 import { BASE_URL } from '../config/api';
 
 export const authService = {
-  // POST /auth/ingreso
   iniciarSesion: async (email: string, contrasena: string): Promise<boolean> => {
     try {
       const respuesta = await fetch(`${BASE_URL}/auth/ingreso`, {
@@ -39,14 +37,31 @@ export const authService = {
     await SecureStore.deleteItemAsync('token_sesion');
   },
 
-  // 🚀 Función restaurada para que no tire error en login.tsx
+  //  BIOMETRÍA REAL (Huella/Face ID)
   autenticarConBiometria: async (): Promise<boolean> => {
     try {
-      // Como base, validamos si existe un token previo guardado
       const token = await SecureStore.getItemAsync('token_sesion');
-      return !!token;
+      if (!token) return false; // Si no hay sesión previa, ni intentamos la biometría
+
+      const { success } = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Ingresar a Mi Ciudad Colón',
+        cancelLabel: 'Cancelar',
+        fallbackLabel: 'Usar contraseña',
+        disableDeviceFallback: false,
+      });
+
+      return success;
     } catch (error) {
+      console.error('Error al autenticar con biometría:', error);
       return false;
     }
+  },
+  
+  //  Chequea si el celular tiene lector y si el usuario guardó su huella
+    esBiometriaSoportada: async (): Promise<boolean> => {
+    const tieneHardware = await LocalAuthentication.hasHardwareAsync();
+    const tieneBiometriaConfigurada = await LocalAuthentication.isEnrolledAsync();
+    console.log('BIOMETRÍA → lector:', tieneHardware, '| huella registrada:', tieneBiometriaConfigurada); 
+    return tieneHardware && tieneBiometriaConfigurada;
   }
 };

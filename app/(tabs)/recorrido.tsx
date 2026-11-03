@@ -1,17 +1,17 @@
 // app/(tabs)/recorrido.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
-import Storage from 'expo-sqlite/kv-store'; // ✏️
+import Storage from 'expo-sqlite/kv-store'; 
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native'; // ✏️ Alert
+import { ActivityIndicator, Alert, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native'; 
 import { lugaresServicio } from '../../src/servicios/lugares';
 import { visitasServicio } from '../../src/servicios/visitas';
 
-const CLAVE_OCULTAS = 'visitas_ocultas'; // ✏️
+const CLAVE_OCULTAS = 'visitas_ocultas'; 
 
 export default function PantallaRecorrido() {
   const [visitas, setVisitas] = useState<any[]>([]);
-  const [ocultas, setOcultas] = useState<string[]>([]); // ✏️
+  const [ocultas, setOcultas] = useState<string[]>([]); 
   const [nombresLugares, setNombresLugares] = useState<Record<string, string>>({});
   const [cargando, setCargando] = useState(true);
 
@@ -22,7 +22,7 @@ export default function PantallaRecorrido() {
       const cargarRecorrido = async () => {
         setCargando(true);
         try {
-          // ✏️ ids que el usuario ocultó en este teléfono
+          //  ids que el usuario ocultó en este teléfono
           const guardadas = await Storage.getItem(CLAVE_OCULTAS);
           if (activo) setOcultas(guardadas ? JSON.parse(guardadas) : []);
 
@@ -52,7 +52,7 @@ export default function PantallaRecorrido() {
     }, [])
   );
 
-  // ✏️ Pregunta antes de ocultar y guarda el id en el teléfono
+  //  Pregunta antes de ocultar y guarda el id en el teléfono
   const confirmarOcultar = (idVisita: string) => {
     Alert.alert(
       'Quitar del recorrido',
@@ -72,7 +72,7 @@ export default function PantallaRecorrido() {
     );
   };
 
-  // ✏️ Lo que realmente se muestra
+  //  Lo que realmente se muestra
   const visitasVisibles = visitas.filter((v) => !ocultas.includes(String(v.id || v._id)));
 
   if (cargando) {
@@ -87,7 +87,7 @@ export default function PantallaRecorrido() {
     <View style={estilos.contenedor}>
       <Text style={estilos.titulo}>Mi Recorrido</Text>
 
-      {visitasVisibles.length === 0 ? ( // ✏️
+      {visitasVisibles.length === 0 ? ( 
         <View style={estilos.estadoVacio}>
           <Ionicons name="map-outline" size={64} color="#9CA3AF" />
           <Text style={estilos.textoVacio}>Tu recorrido está vacío.</Text>
@@ -97,7 +97,7 @@ export default function PantallaRecorrido() {
         </View>
       ) : (
         <FlatList
-          data={visitasVisibles} // ✏️
+          data={visitasVisibles} 
           keyExtractor={(item) => String(item.id || item._id || Math.random())}
           contentContainerStyle={estilos.lista}
           renderItem={({ item }) => (
@@ -126,7 +126,7 @@ export default function PantallaRecorrido() {
                   </View>
                 )}
               </View>
-              {/* ✏️ botón de quitar */}
+              {/*  botón de quitar */}
               <Pressable
                 style={estilos.botonQuitar}
                 onPress={() => confirmarOcultar(String(item.id || item._id))}

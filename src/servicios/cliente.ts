@@ -23,14 +23,14 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
 
     if (!respuesta.ok) {
       const textoError = await respuesta.text();
-      console.error(`❌ [ERROR API ${respuesta.status}] en ${endpoint}:`, textoError);
+      console.error(` [ERROR API ${respuesta.status}] en ${endpoint}:`, textoError);
       throw new Error(`Error ${respuesta.status}`);
     }
 
     const json = await respuesta.json();
     return json;
   } catch (error) {
-    console.error(`❌ [ERROR DE CONEXIÓN] en ${endpoint}:`, error);
+    console.error(` [ERROR DE CONEXIÓN] en ${endpoint}:`, error);
     throw error;
   }
 }

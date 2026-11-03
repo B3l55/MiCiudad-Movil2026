@@ -6,7 +6,7 @@ import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from '
 import { eventosGuardadosServicio } from '../../src/servicios/eventosGuardados';
 
 export default function MisEventos() {
-  // 🚀 Inicializamos explícitamente con un array vacío [] para que NUNCA sea undefined
+  //  Inicializamos explícitamente con un array vacío [] para que NUNCA sea undefined
   const [eventosGuardados, setEventosGuardados] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
 
@@ -59,7 +59,7 @@ export default function MisEventos() {
           </Text>
         </View>
       ) : (
-        <FlatList
+     <FlatList
           data={eventosGuardados}
           keyExtractor={(item) => String(item.id || item.eventoId || Math.random())}
           contentContainerStyle={estilos.lista}
@@ -69,7 +69,11 @@ export default function MisEventos() {
               onPress={() => router.push(`/eventos/${item.id || item.eventoId}` as any)}
             >
               <View style={estilos.infoTarjeta}>
-                <Text style={estilos.nombreEvento}>{item.nombre || 'Evento sin nombre'}</Text>
+                {/*   Lee el título o el nombre */}
+                <Text style={estilos.nombreEvento}>
+                  {item.titulo || item.nombre || 'Evento sin título'}
+                </Text>
+                
                 {item.inicio && (
                   <Text style={estilos.fechaEvento}>
                     {new Date(item.inicio).toLocaleDateString('es-AR', {
@@ -89,6 +93,7 @@ export default function MisEventos() {
     </View>
   );
 }
+
 
 const estilos = StyleSheet.create({
   contenedor: { flex: 1, backgroundColor: '#F2F2F7', paddingTop: 40, paddingHorizontal: 16 },

@@ -57,7 +57,7 @@ export default function PantallaAgenda() {
         try {
           const respuesta = await eventosServicio.obtenerEventos();
           if (!cancelado) {
-            // 🚀 Extraemos la propiedad datos para que nunca sea undefined
+            
             const lista = respuesta.datos || respuesta;
             setTodosLosEventos(Array.isArray(lista) ? lista : []);
           }
@@ -73,7 +73,7 @@ export default function PantallaAgenda() {
   );
 
   useEffect(() => {
-    // 🚀 Validación para asegurar que todosLosEventos sea un array
+    
     if (!Array.isArray(todosLosEventos)) {
       setEventosFiltrados([]);
       return;

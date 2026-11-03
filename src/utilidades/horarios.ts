@@ -27,7 +27,7 @@ export const calcularEstadoApertura = (
   const minutosAhora = ahora.getHours() * 60 + ahora.getMinutes();
   const deHoy = horarios.filter((h) => h.dia === hoy);
 
-  // 1. ¿Está abierto ahora?
+  //  Está abierto ahora?
   for (const h of deHoy) {
     if (minutosAhora >= aMinutos(h.abre) && minutosAhora < aMinutos(h.cierra)) {
       return { abierto: true, texto: `Abierto ahora · cierra ${h.cierra}` };

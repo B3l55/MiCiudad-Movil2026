@@ -1,109 +1,68 @@
 // app/registro-visita/[id].tsx
 import { Ionicons } from '@expo/vector-icons';
-import { File } from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
-import { fetch } from 'expo/fetch';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { BASE_URL } from '../../src/config/api';
 import { visitasServicio } from '../../src/servicios/visitas';
 
 export default function RegistrarVisita() {
   // id del LUGAR que se está visitando
   const { id } = useLocalSearchParams();
   const [nota, setNota] = useState('');
-
-  // url que devuelve la API al subir la foto (es lo que va en fotoUri)
-  const [fotoUrl, setFotoUrl] = useState<string | null>(null);
-  const [fotoUriLocal, setFotoUriLocal] = useState<string | null>(null);
-
-  const [subiendoFoto, setSubiendoFoto] = useState(false);
+  const [fotoUri, setFotoUri] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
 
-  const seleccionarFoto = async () => {
+  const elegirDeGaleria = async () => {
     const permiso = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permiso.granted) {
-      Alert.alert('Permiso requerido', 'Se necesita acceso a la galería.');
+      Alert.alert('Permiso requerido', 'Se necesita acceso a la galería para elegir una foto.');
       return;
     }
-
     const resultado = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
-      quality: 0.3, // Comprimida para que pese poco
+      quality: 0.5,
     });
-
     if (!resultado.canceled && resultado.assets[0].uri) {
-      setSubiendoFoto(true);
-      const uriLocal = resultado.assets[0].uri;
-      setFotoUriLocal(uriLocal);
+      setFotoUri(resultado.assets[0].uri);
+    }
+  };
 
-      try {
-        // El fetch de Expo solo acepta archivos reales (File), no objetos {uri, name, type}
-        const formData = new FormData();
-        formData.append('archivo', new File(uriLocal));
-
-        const token = await SecureStore.getItemAsync('token_sesion');
-
-        const respuesta = await fetch(`${BASE_URL}/archivos`, {
-          method: 'POST',
-          headers: {
-            Accept: 'application/json',
-            // Sin Content-Type: fetch genera el boundary multipart solo
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: formData,
-        });
-
-        const respuestaTexto = await respuesta.text();
-        let json: any;
-        try {
-          json = JSON.parse(respuestaTexto);
-        } catch (e) {
-          throw new Error('Respuesta inválida del servidor: ' + respuestaTexto);
-        }
-
-        if (!respuesta.ok) {
-          const mensajeError = json.error?.mensaje || json.mensaje || json.error || 'Error al subir la imagen';
-          throw new Error(typeof mensajeError === 'string' ? mensajeError : JSON.stringify(mensajeError));
-        }
-
-        // La API responde con el sobre { datos: {...}, meta: null }
-        console.log('Respuesta de /archivos:', json.datos);
-        const url = json.datos?.url ?? json.datos?.clave;
-        if (!url) {
-          throw new Error('El servidor no devolvió la dirección del archivo.');
-        }
-
-        setFotoUrl(url);
-      } catch (error: any) {
-        console.error('Error detallado al subir foto:', error);
-        Alert.alert('Error al subir', error.message || 'No se pudo subir la foto.');
-        setFotoUriLocal(null);
-        setFotoUrl(null);
-      } finally {
-        setSubiendoFoto(false);
-      }
+  const sacarFoto = async () => {
+    const permiso = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permiso.granted) {
+      Alert.alert('Permiso requerido', 'Se necesita acceso a la cámara para sacar la foto. Podés elegir una de la galería.');
+      return;
+    }
+    const resultado = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      quality: 0.5,
+    });
+    if (!resultado.canceled && resultado.assets[0].uri) {
+      setFotoUri(resultado.assets[0].uri);
     }
   };
 
   const guardarVisita = async () => {
     setGuardando(true);
     try {
-      // Crea la visita al lugar con la nota y la foto (ambas opcionales)
-      await visitasServicio.registrarVisita({
+      // Se guarda primero en el teléfono; si hay señal se sube al instante
+      const { sincronizada } = await visitasServicio.registrarVisita({
         lugarId: String(id),
         origen: 'manual',
         nota: nota.trim() || null,
-        fotoUri: fotoUrl || null,
+        fotoLocalUri: fotoUri,
       });
 
-      Alert.alert('¡Listo!', 'Visita registrada con éxito.', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      Alert.alert(
+        sincronizada ? '¡Listo!' : 'Visita guardada',
+        sincronizada
+          ? 'Visita registrada con éxito.'
+          : 'No hay conexión. Guardamos tu visita en el teléfono y se subirá sola cuando vuelva la señal.',
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
     } catch (error: any) {
       Alert.alert('Error al guardar', error.message || 'No se pudo registrar la visita.');
     } finally {
@@ -121,21 +80,26 @@ export default function RegistrarVisita() {
 
         {/* Sección Foto */}
         <Text style={estilos.etiqueta}>Foto (opcional)</Text>
-        <Pressable style={estilos.cajaFoto} onPress={seleccionarFoto} disabled={subiendoFoto}>
-          {fotoUriLocal ? (
-            <Image source={{ uri: fotoUriLocal }} style={estilos.imagen} />
+        <View style={estilos.cajaFoto}>
+          {fotoUri ? (
+            <Image source={{ uri: fotoUri }} style={estilos.imagen} />
           ) : (
             <View style={estilos.placeholderFoto}>
-              <Ionicons name="camera-outline" size={32} color="#0B5394" />
-              <Text style={estilos.textoFoto}>Tocar para elegir una foto</Text>
+              <Ionicons name="image-outline" size={32} color="#9CA3AF" />
+              <Text style={estilos.textoFoto}>Todavía no elegiste una foto</Text>
             </View>
           )}
-          {subiendoFoto && (
-            <View style={estilos.cargandoFoto}>
-              <ActivityIndicator color="#FFFFFF" size="large" />
-            </View>
-          )}
-        </Pressable>
+        </View>
+        <View style={estilos.filaBotonesFoto}>
+          <Pressable style={estilos.botonFoto} onPress={sacarFoto}>
+            <Ionicons name="camera-outline" size={22} color="#0B5394" />
+            <Text style={estilos.textoBotonFoto}>Sacar foto</Text>
+          </Pressable>
+          <Pressable style={estilos.botonFoto} onPress={elegirDeGaleria}>
+            <Ionicons name="images-outline" size={22} color="#0B5394" />
+            <Text style={estilos.textoBotonFoto}>Galería</Text>
+          </Pressable>
+        </View>
 
         {/* Sección Nota */}
         <Text style={estilos.etiqueta}>Comentario (opcional)</Text>
@@ -154,9 +118,9 @@ export default function RegistrarVisita() {
 
         {/* Botón Guardar */}
         <Pressable
-          style={[estilos.botonPrincipal, (guardando || subiendoFoto) && estilos.botonDeshabilitado]}
+          style={[estilos.botonPrincipal, guardando && estilos.botonDeshabilitado]}
           onPress={guardarVisita}
-          disabled={guardando || subiendoFoto}
+          disabled={guardando}
         >
           {guardando ? (
             <ActivityIndicator color="#FFFFFF" />
@@ -183,21 +147,25 @@ const estilos = StyleSheet.create({
     borderColor: '#E5E5EA',
     borderStyle: 'dashed',
     overflow: 'hidden',
-    marginBottom: 24,
+    marginBottom: 12,
   },
   placeholderFoto: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 8 },
-  textoFoto: { color: '#0B5394', fontWeight: '500' },
+  textoFoto: { color: '#6B7280', fontWeight: '500' },
   imagen: { width: '100%', height: '100%', resizeMode: 'cover' },
-  cargandoFoto: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
+  filaBotonesFoto: { flexDirection: 'row', gap: 12, marginBottom: 24 },
+  botonFoto: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    minHeight: 48,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#0B5394',
+    backgroundColor: '#EBF3FB',
   },
+  textoBotonFoto: { color: '#0B5394', fontWeight: '600', fontSize: 15 },
   cajaInput: {
     backgroundColor: '#F3F4F6',
     borderRadius: 12,

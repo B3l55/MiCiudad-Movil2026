@@ -2,7 +2,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ImageBackground, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, ImageBackground, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { authService } from '../../src/servicios/auth';
 
@@ -11,22 +11,35 @@ export default function Login() {
   const [contrasena, setContrasena] = useState('');
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // Bandera para saber si mostramos el botón de la huella
-  const [haySesionPrevia, setHaySesionPrevia] = useState(false);
 
-  // Al abrir la pantalla, verificamos si ya existe un token guardado en SecureStore
+  // Solo mostramos la huella si el celu tiene lector Y si hay sesión
+  const [mostrarBiometria, setMostrarBiometria] = useState(false);
+  
+  
+  const manejarBiometria = async (mostrarAviso = true) => {
+    const exito = await authService.autenticarConBiometria();
+    if (exito) {
+      router.replace('/(tabs)' as any);
+    } else if (mostrarAviso) {
+      // Si falló o canceló, se queda en el login
+      Alert.alert('Autenticación fallida', 'Usá tu correo y contraseña para ingresar.');
+    }
+  };
+
   useEffect(() => {
     const verificarSesion = async () => {
       const token = await authService.obtenerToken();
+      console.log('LOGIN → hay token:', !!token);
       if (token) {
-        setHaySesionPrevia(true);
+        // Chequeamos que el teléfono soporte huella y esté configurada
+        const biometriaActiva = await authService.esBiometriaSoportada();
+        setMostrarBiometria(biometriaActiva);
+        if (biometriaActiva) manejarBiometria(false);
       }
     };
     verificarSesion();
   }, []);
 
-  // Función para el ingreso tradicional (correo + contraseña)
   const manejarLogin = async () => {
     if (!correo || !contrasena) {
       setError("Por favor completá ambos campos.");
@@ -36,10 +49,10 @@ export default function Login() {
     setCargando(true);
     setError(null);
 
- try {
+    try {
       const exito = await authService.iniciarSesion(correo, contrasena);
       if (exito) {
-        router.replace('/(tabs)'); 
+        router.replace('/(tabs)' as any);
       } else {
         setError("Correo electrónico o contraseña incorrectos.");
       }
@@ -50,26 +63,16 @@ export default function Login() {
     }
   };
 
-  // Función para reingresar rápidamente usando biometría
-  const manejarBiometria = async () => {
-    const exito = await authService.autenticarConBiometria();
-    if (exito) {
-      router.replace('/(tabs)');
-    } else {
-      setError("No se pudo verificar la identidad biométrica.");
-    }
-  };
-
   return (
-    <ImageBackground 
+    <ImageBackground
       source={require('../../assets/images/colon.jpg')}
       style={estilos.contenedor}
       resizeMode="cover"
     >
       <View style={estilos.capaOscura}>
-        
+
         <View style={estilos.cajaIcono}>
-          <Ionicons name="location-outline" size={64} color="#FFFFFF" /> 
+          <Ionicons name="location-outline" size={64} color="#FFFFFF" />
         </View>
         <Text style={estilos.titulo}>Ingresar a Mi Ciudad</Text>
 
@@ -84,7 +87,7 @@ export default function Login() {
             value={correo}
             onChangeText={setCorreo}
           />
-          
+
           <TextInput
             style={estilos.input}
             placeholder="Contraseña"
@@ -93,8 +96,8 @@ export default function Login() {
             onChangeText={setContrasena}
           />
 
-          <Pressable 
-            style={estilos.botonIngresar} 
+          <Pressable
+            style={estilos.botonIngresar}
             onPress={manejarLogin}
             disabled={cargando}
           >
@@ -105,17 +108,16 @@ export default function Login() {
             )}
           </Pressable>
 
-          {haySesionPrevia && (
-            <Pressable style={estilos.botonBiometria} onPress={manejarBiometria}>
+          {mostrarBiometria && (
+            <Pressable style={estilos.botonBiometria} onPress={() => manejarBiometria()}>
               <Ionicons name="finger-print-outline" size={24} color="#FFFFFF" />
               <Text style={estilos.textoBiometria}>Reingresar con biometría</Text>
             </Pressable>
           )}
         </View>
-        
-        {/* BOTÓN MODIFICADO PARA NAVEGAR AL REGISTRO */}
-        <Pressable 
-          style={{ marginTop: 12, paddingVertical: 8 }} 
+
+        <Pressable
+          style={{ marginTop: 12, paddingVertical: 8 }}
           onPress={() => router.push('/registro')}
         >
           <Text style={{ color: '#FFFFFF', textAlign: 'center', fontSize: 14, textDecorationLine: 'underline' }}>

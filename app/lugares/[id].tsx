@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 
+import ReproductorAudioguia from '../../src/componentes/ReproductorAudioguia';
 import { favoritosServicio } from '../../src/servicios/favoritos';
 import { lugaresServicio } from '../../src/servicios/lugares';
 import { Lugar } from '../../src/tipos/lugares';
@@ -18,7 +19,7 @@ export default function DetalleLugarPantalla() {
 
   useEffect(() => {
     if (!id) return;
-    
+
     const cargarDatos = async () => {
       setCargando(true);
       try {
@@ -62,7 +63,7 @@ export default function DetalleLugarPantalla() {
 
     if (Array.isArray(data)) {
       if (data.length === 0) return 'Abierto - Consultar horarios';
-      
+
       const horariosFormateados = data.map((item) => {
         if (typeof item === 'string') return item;
         if (typeof item === 'object' && item !== null) {
@@ -123,8 +124,12 @@ export default function DetalleLugarPantalla() {
   const lat = Number(String(lugar.coordenadas?.latitud ?? (lugar.coordenadas as any)?.lat ?? '-32.2230').replace(',', '.'));
   const lng = Number(String(lugar.coordenadas?.longitud ?? (lugar.coordenadas as any)?.lng ?? '-58.1415').replace(',', '.'));
 
+  //  Busca por nombre y dirección (las coordenadas de la demo son aproximadas); si no hay dirección, usa las coordenadas
   const abrirGoogleMaps = () => {
-    Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`);
+    const consulta = lugar.direccion
+      ? encodeURIComponent(`${lugar.nombre}, ${lugar.direccion}, Entre Ríos, Argentina`)
+      : `${lat},${lng}`;
+    Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${consulta}`);
   };
 
   const llamar = () => {
@@ -149,21 +154,6 @@ export default function DetalleLugarPantalla() {
       });
     } else {
       Alert.alert('No disponible', 'Este lugar no tiene un sitio web registrado.');
-    }
-  };
-
-  const abrirAudioguia = () => {
-    const audio = (lugar as any).audioguia || (lugar as any).audioguiaUrl || (lugar as any).audioUrl || (lugar as any).audio;
-    if (audio) {
-      let urlFinal = String(audio).trim();
-      if (!urlFinal.startsWith('http://') && !urlFinal.startsWith('https://')) {
-        urlFinal = `https://${urlFinal}`;
-      }
-      Linking.openURL(urlFinal).catch(() => {
-        Alert.alert('Error', 'No se pudo reproducir la audioguía.');
-      });
-    } else {
-      Alert.alert('No disponible', 'La audioguía no está disponible para este lugar todavía.');
     }
   };
 
@@ -196,7 +186,7 @@ export default function DetalleLugarPantalla() {
       <Stack.Screen options={{ headerShown: false }} />
 
       <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
-        
+
         {/* Cabecera */}
         <View style={estilos.imagenHeader}>
           <Pressable style={[estilos.botonFlotante, { left: 16 }]} onPress={() => router.back()}>
@@ -215,7 +205,7 @@ export default function DetalleLugarPantalla() {
 
         {/* Cuerpo */}
         <View style={estilos.cuerpo}>
-          
+
           <Text style={estilos.nombreLugar}>{String(lugar.nombre)}</Text>
 
           {/* Horarios Formateados */}
@@ -261,14 +251,10 @@ export default function DetalleLugarPantalla() {
             </Pressable>
           </View>
 
-          {/* Tarjeta Audioguía */}
-          <Pressable style={estilos.tarjetaAudioguia} onPress={abrirAudioguia}>
-            <Ionicons name="play-circle" size={44} color="#0B5394" />
-            <View>
-              <Text style={estilos.tituloAudioguia}>Audioguía disponible</Text>
-              <Text style={estilos.subtituloAudioguia}>Tocar para escuchar</Text>
-            </View>
-          </Pressable>
+          {/*  Audioguía: solo si el lugar tiene */}
+          {lugar.audioguia && (
+            <ReproductorAudioguia audioguia={lugar.audioguia} titulo={lugar.nombre} />
+          )}
 
           {/* Descripción */}
           <Text style={estilos.tituloSeccion}>Descripción</Text>
@@ -277,8 +263,8 @@ export default function DetalleLugarPantalla() {
           </Text>
 
           {/* Botón Registrar Visita */}
-          <Pressable 
-            style={estilos.botonVisita} 
+          <Pressable
+            style={estilos.botonVisita}
             onPress={() => router.push(`/registro-visita/${id}` as any)}
           >
             <Ionicons name="camera" size={20} color="#FFFFFF" />
@@ -306,9 +292,6 @@ const estilos = StyleSheet.create({
   filaAcciones: { flexDirection: 'row', gap: 12, marginBottom: 24 },
   botonAccionMitad: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#E5E5EA', gap: 8 },
   textoBotonAccion: { fontSize: 15, fontWeight: '600', color: '#374151' },
-  tarjetaAudioguia: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', padding: 16, borderRadius: 12, gap: 16, marginBottom: 24 },
-  tituloAudioguia: { fontSize: 16, fontWeight: 'bold', color: '#1C1C1E' },
-  subtituloAudioguia: { fontSize: 14, color: '#5C6B7A', marginTop: 2 },
   tituloSeccion: { fontSize: 18, fontWeight: 'bold', color: '#1C1C1E', marginBottom: 8 },
   descripcionLugar: { fontSize: 15, color: '#374151', lineHeight: 24, paddingBottom: 24 },
   botonVisita: { flexDirection: 'row', backgroundColor: '#0B5394', padding: 16, borderRadius: 12, alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 40 },

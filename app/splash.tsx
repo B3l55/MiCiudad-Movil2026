@@ -1,3 +1,4 @@
+// app/splash.tsx
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useEffect } from 'react';
@@ -15,26 +16,25 @@ export default function IndexRedirect() {
       const token = await SecureStore.getItemAsync('token_sesion');
       
       if (!token) {
-        // Si NO hay sesión, redirige automáticamente al login
-        router.replace('/login' as any);
+        router.replace('/(auth)/login');
       } else {
-        // Si SÍ hay sesión, carga el mapa y las pestañas principales
-        router.replace('/(tabs)' as any);
+        //  RESTAURADO: Si hay sesión, va directo al menú principal
+        router.replace('/(tabs)');
       }
+      
     } catch (error) {
-      router.replace('/login' as any);
+      router.replace('/(auth)/login');
     }
   };
 
-  // Pantalla de carga limpia mientras valida la sesión
   return (
-    <View style={styles.container}>
+    <View style={estilos.container}>
       <ActivityIndicator size="large" color="#0B5394" />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const estilos = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',

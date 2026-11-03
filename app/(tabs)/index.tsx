@@ -6,6 +6,7 @@ import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -16,11 +17,17 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 
+import MapaLugares from '../../src/componentes/MapaLugares';
+import { useUbicacion } from '../../src/hooks/useUbicacion';
 import { categoriasServicio } from '../../src/servicios/categoria';
 import { lugaresServicio } from '../../src/servicios/lugares';
 import { usuarioServicio } from '../../src/servicios/usuario';
 import { Categoria } from '../../src/tipos/categorias';
 import { Lugar } from '../../src/tipos/lugares';
+import { distanciaMetros, formatearDistancia } from '../../src/utilidades/distancia';
+
+//  true = react-native-maps (mapa nuevo), false = Leaflet (el que ya se ve bien)
+const USAR_MAPA_NUEVO = false;
 
 export default function PantallaInicio() {
   const [lugares, setLugares] = useState<Lugar[]>([]);
@@ -31,13 +38,16 @@ export default function PantallaInicio() {
   const [categoriasFavoritas, setCategoriasFavoritas] = useState<string[]>([]);
   const [nombreUsuario, setNombreUsuario] = useState<string>('');
 
+  // Ubicación del usuario (si niega el permiso, ubicacion queda en null y todo sigue andando)
+  const { ubicacion, permiso } = useUbicacion();
+
   useFocusEffect(
     useCallback(() => {
       let cancelado = false;
       const cargarDatosYPreferencias = async () => {
         setCargando(true);
         try {
-          // 1. Cargamos las preferencias guardadas en SecureStore
+          //  Cargamos las preferencias guardadas en SecureStore
           const infoStr = await SecureStore.getItemAsync('usuario_info');
           if (infoStr && !cancelado) {
             const usuario = JSON.parse(infoStr);
@@ -46,12 +56,11 @@ export default function PantallaInicio() {
             }
           }
 
-          // 2. Cargamos lugares, categorías y perfil desde el servidor
-          const [resLugares, resCategorias, perfil] = await Promise.all([
-            lugaresServicio.obtenerLugares(),
-            categoriasServicio.obtenerCategorias(),
-            usuarioServicio.obtenerPerfil().catch(() => null),
-          ]);
+          //  Cargamos lugares, categorías y perfil desde el servidor SECUENCIALMENTE
+          // para evitar que colisionen las transacciones de SQLite al guardar la caché.
+          const resLugares = await lugaresServicio.obtenerLugares();
+          const resCategorias = await categoriasServicio.obtenerCategorias();
+          const perfil = await usuarioServicio.obtenerPerfil().catch(() => null);
 
           if (!cancelado) {
             setLugares(resLugares.datos || []);
@@ -83,7 +92,20 @@ export default function PantallaInicio() {
   const obtenerLat = (l: Lugar) => Number(String(l.coordenadas?.latitud ?? (l.coordenadas as any)?.lat ?? '-32.2230').replace(',', '.'));
   const obtenerLng = (l: Lugar) => Number(String(l.coordenadas?.longitud ?? (l.coordenadas as any)?.lng ?? '-58.1415').replace(',', '.'));
 
-  const marcadoresJS = lugaresFiltrados.map(lugar => 
+  // Cada lugar con su distancia al usuario, del más cerca al más lejos (si hay ubicación)
+  const lugaresOrdenados = useMemo(() => {
+    const conDistancia = lugaresFiltrados.map((lugar) => ({
+      lugar,
+      distancia: ubicacion
+        ? distanciaMetros(ubicacion, { latitud: obtenerLat(lugar), longitud: obtenerLng(lugar) })
+        : null,
+    }));
+    if (ubicacion) conDistancia.sort((a, b) => (a.distancia ?? 0) - (b.distancia ?? 0));
+    return conDistancia;
+  }, [lugaresFiltrados, ubicacion]);
+
+  // --- Mapa Leaflet ---
+  const marcadoresJS = lugaresFiltrados.map(lugar =>
     `L.marker([${obtenerLat(lugar)}, ${obtenerLng(lugar)}]).addTo(map).bindPopup("<b>${lugar.nombre}</b>");`
   ).join('\n');
 
@@ -120,15 +142,15 @@ export default function PantallaInicio() {
           </Text>
           <Text style={estilos.tituloHeader}>Colón</Text>
         </View>
-        
+
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <Pressable style={estilos.botonQR} onPress={() => router.push('/escaner' as any)}>
             <Ionicons name="qr-code-outline" size={20} color="#0B5394" />
             <Text style={estilos.textoBotonQR}>QR</Text>
           </Pressable>
 
-          <Pressable 
-            style={[estilos.botonQR, { paddingHorizontal: 8 }]} 
+          <Pressable
+            style={[estilos.botonQR, { paddingHorizontal: 8 }]}
             onPress={() => router.push('/perfil' as any)}
           >
             <Ionicons name="person-outline" size={20} color="#0B5394" />
@@ -167,7 +189,7 @@ export default function PantallaInicio() {
               <Pressable
                 key={cat.id}
                 style={[
-                  estilos.chipCategoria, 
+                  estilos.chipCategoria,
                   activa && estilos.chipCategoriaActiva,
                   esFavoritaUsuario && !activa && { borderColor: '#0B5394', borderWidth: 2 }
                 ]}
@@ -182,18 +204,35 @@ export default function PantallaInicio() {
         </ScrollView>
       </View>
 
+      {/*  Un solo bloque de mapa: se elige con USAR_MAPA_NUEVO */}
       <View style={estilos.contenedorMapa}>
-        <WebView
-          source={{ html: htmlMapaMultiplesPines }}
-          style={estilos.mapa}
-          scrollEnabled={true}
-          showsHorizontalScrollIndicator={false}
-          showsVerticalScrollIndicator={false}
-        />
+        {USAR_MAPA_NUEVO ? (
+          <MapaLugares lugares={lugaresFiltrados} ubicacionUsuario={ubicacion} />
+        ) : (
+          <WebView
+            source={{ html: htmlMapaMultiplesPines }}
+            style={estilos.mapa}
+            scrollEnabled
+            showsHorizontalScrollIndicator={false}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
       </View>
 
+      {/* Si negó el permiso, la app sigue andando y le explicamos cómo activarlo */}
+      {permiso === 'denegado' && (
+        <Pressable style={estilos.avisoUbicacion} onPress={() => Linking.openSettings()}>
+          <Ionicons name="location-outline" size={18} color="#92400E" />
+          <Text style={estilos.textoAvisoUbicacion}>
+            Activá tu ubicación para ver qué tenés cerca. Tocá para abrir Ajustes.
+          </Text>
+        </Pressable>
+      )}
+
       <View style={estilos.headerLista}>
-        <Text style={estilos.tituloLista}>Lugares ({lugaresFiltrados.length})</Text>
+        <Text style={estilos.tituloLista}>
+          {ubicacion ? 'Cerca tuyo' : 'Lugares'} ({lugaresFiltrados.length})
+        </Text>
       </View>
 
       {cargando ? (
@@ -202,17 +241,20 @@ export default function PantallaInicio() {
         </View>
       ) : (
         <FlatList
-          data={lugaresFiltrados}
-          keyExtractor={(item) => item.id}
+          data={lugaresOrdenados}
+          keyExtractor={(item) => item.lugar.id}
           contentContainerStyle={estilos.listaLugares}
           renderItem={({ item }) => (
-            <Pressable style={estilos.tarjetaLugar} onPress={() => router.push(`/lugares/${item.id}` as any)}>
+            <Pressable style={estilos.tarjetaLugar} onPress={() => router.push(`/lugares/${item.lugar.id}` as any)}>
               <View style={{ flex: 1 }}>
-                <Text style={estilos.nombreLugar}>{item.nombre}</Text>
+                <Text style={estilos.nombreLugar}>{item.lugar.nombre}</Text>
                 <Text style={estilos.direccionLugar} numberOfLines={1}>
-                  {item.direccion || item.descripcionCorta}
+                  {item.lugar.direccion || item.lugar.descripcionCorta}
                 </Text>
               </View>
+              {item.distancia !== null && (
+                <Text style={estilos.distanciaLugar}>{formatearDistancia(item.distancia)}</Text>
+              )}
               <Ionicons name="chevron-forward" size={20} color="#0B5394" />
             </Pressable>
           )}
@@ -247,4 +289,7 @@ const estilos = StyleSheet.create({
   tarjetaLugar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#E5E5EA' },
   nombreLugar: { fontSize: 16, fontWeight: 'bold', color: '#1C1C1E' },
   direccionLugar: { fontSize: 13, color: '#5C6B7A', marginTop: 2 },
+  distanciaLugar: { fontSize: 14, fontWeight: '600', color: '#0B5394', marginRight: 8 },
+  avisoUbicacion: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FEF3C7', marginHorizontal: 16, padding: 10, borderRadius: 10 },
+  textoAvisoUbicacion: { flex: 1, fontSize: 13, color: '#92400E' },
 });

@@ -1,7 +1,6 @@
 // app/eventos/[id].tsx
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { eventosServicio } from '../../src/servicios/eventos';
 import { eventosGuardadosServicio } from '../../src/servicios/eventosGuardados';
 import { lugaresServicio } from '../../src/servicios/lugares';
+import { usuarioServicio } from '../../src/servicios/usuario';
 import { ErrorApi } from '../../src/tipos/api';
 import { Evento } from '../../src/tipos/eventos';
 import { Lugar } from '../../src/tipos/lugares';
@@ -47,17 +47,17 @@ export default function DetalleEvento() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [guardado, setGuardado] = useState(false);
-  
-  // 🚀 Estado para saber si es Turismo
+
+  // Estado para saber si es Turismo
   const [esAdmin, setEsAdmin] = useState(false);
   const [procesandoAdmin, setProcesandoAdmin] = useState(false);
 
   useEffect(() => {
     const cargar = async () => {
       try {
-        // Chequeamos si es la cuenta de turismo usando el email guardado en la sesión
-        const emailUsuario = await SecureStore.getItemAsync('email_usuario'); // Ajustá esta clave si guardás el email con otro nombre
-        if (emailUsuario === 'turismo@colon.demo.ar') {
+        // Le pedimos el perfil real al backend para asegurar que lea el email exacto
+        const perfil = await usuarioServicio.obtenerPerfil().catch(() => null);
+        if (perfil && perfil.email === 'turismo@colon.demo.ar') {
           setEsAdmin(true);
         }
 
@@ -96,16 +96,19 @@ export default function DetalleEvento() {
     }
   };
 
-  // 🚀 Función para manejar los botones de administración
-  const cambiarEstadoAdmin = async (nuevoEstado: 'suspendido' | 'cancelado') => {
+  // Maneja los botones de administración de Turismo
+  const cambiarEstadoAdmin = async (nuevoEstado: 'programado' | 'suspendido' | 'cancelado') => { 
+    const accion = nuevoEstado === 'cancelado' ? 'Cancelar' : nuevoEstado === 'suspendido' ? 'Suspender' : 'Reprogramar'; 
     Alert.alert(
-      `¿${nuevoEstado === 'cancelado' ? 'Cancelar' : 'Suspender'} evento?`,
-      `Estás por marcar el evento como ${nuevoEstado}. Esta acción será visible para todos los usuarios.`,
+      `¿${accion} evento?`, 
+      nuevoEstado === 'programado' 
+        ? 'El evento vuelve a estar programado y se avisa a quienes lo guardaron.'
+        : `Estás por marcar el evento como ${nuevoEstado}. Esta acción será visible para todos los usuarios.`,
       [
         { text: 'Volver', style: 'cancel' },
         {
           text: 'Sí, confirmar',
-          style: 'destructive',
+          style: nuevoEstado === 'programado' ? 'default' : 'destructive', 
           onPress: async () => {
             setProcesandoAdmin(true);
             try {
@@ -118,8 +121,8 @@ export default function DetalleEvento() {
             } finally {
               setProcesandoAdmin(false);
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -225,20 +228,31 @@ export default function DetalleEvento() {
           <Text style={estilos.textoInfoExtra}>{textoPrecio(precio)}</Text>
         </View>
 
-        {/* 🚀 Panel de Administración Exclusivo para Turismo */}
-        {esAdmin && !anulado && (
+        {/* Panel de Administración Exclusivo para Turismo */}
+        {esAdmin && estado !== 'cancelado' && estado !== 'finalizado' && ( 
           <View style={estilos.panelAdmin}>
             <Text style={estilos.tituloAdmin}>Acciones de Turismo</Text>
             <View style={estilos.filaBotonesAdmin}>
-              <Pressable
-                style={[estilos.botonAdmin, estilos.botonSuspender, procesandoAdmin && estilos.botonDeshabilitado]}
-                onPress={() => cambiarEstadoAdmin('suspendido')}
-                disabled={procesandoAdmin}
-              >
-                <Ionicons name="pause-circle-outline" size={20} color="#9A3412" />
-                <Text style={estilos.textoBotonSuspender}>Suspender</Text>
-              </Pressable>
-              
+              {estado === 'suspendido' ? ( 
+                <Pressable
+                  style={[estilos.botonAdmin, estilos.botonReprogramar, procesandoAdmin && estilos.botonDeshabilitado]}
+                  onPress={() => cambiarEstadoAdmin('programado')}
+                  disabled={procesandoAdmin}
+                >
+                  <Ionicons name="play-circle-outline" size={20} color="#166534" />
+                  <Text style={estilos.textoBotonReprogramar}>Reprogramar</Text>
+                </Pressable>
+              ) : (
+                <Pressable
+                  style={[estilos.botonAdmin, estilos.botonSuspender, procesandoAdmin && estilos.botonDeshabilitado]}
+                  onPress={() => cambiarEstadoAdmin('suspendido')}
+                  disabled={procesandoAdmin}
+                >
+                  <Ionicons name="pause-circle-outline" size={20} color="#9A3412" />
+                  <Text style={estilos.textoBotonSuspender}>Suspender</Text>
+                </Pressable>
+              )}
+
               <Pressable
                 style={[estilos.botonAdmin, estilos.botonCancelar, procesandoAdmin && estilos.botonDeshabilitado]}
                 onPress={() => cambiarEstadoAdmin('cancelado')}
@@ -274,7 +288,6 @@ export default function DetalleEvento() {
 }
 
 const estilos = StyleSheet.create({
-  // ... (Tus estilos anteriores se mantienen intactos)
   contenedor: { flex: 1, backgroundColor: '#FFFFFF' },
   centrado: { justifyContent: 'center', alignItems: 'center', padding: 20 },
   textoError: { fontSize: 16, color: '#4B5563', marginBottom: 20, textAlign: 'center' },
@@ -363,7 +376,7 @@ const estilos = StyleSheet.create({
   botonGuardado: { backgroundColor: '#E8F5E9', borderWidth: 1, borderColor: '#4CAF50' },
   textoBotonGuardar: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 },
 
-  // 🚀 Nuevos estilos para el panel de Turismo
+  // Estilos del panel de Turismo
   panelAdmin: {
     marginTop: 32,
     padding: 16,
@@ -388,5 +401,7 @@ const estilos = StyleSheet.create({
   textoBotonSuspender: { color: '#9A3412', fontWeight: 'bold', fontSize: 14 },
   botonCancelar: { backgroundColor: '#FEF2F2', borderColor: '#FECACA' },
   textoBotonCancelar: { color: '#991B1B', fontWeight: 'bold', fontSize: 14 },
+  botonReprogramar: { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' }, 
+  textoBotonReprogramar: { color: '#166534', fontWeight: 'bold', fontSize: 14 }, 
   botonDeshabilitado: { opacity: 0.5 },
 });

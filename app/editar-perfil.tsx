@@ -1,26 +1,26 @@
 // app/editar-perfil.tsx
-import { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  Pressable, 
-  StyleSheet, 
-  ActivityIndicator, 
-  Alert, 
-  SafeAreaView, 
-  ScrollView, 
-  Image 
-} from 'react-native';
-import { router, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { router, Stack } from 'expo-router';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View
+} from 'react-native';
 
-import { usuarioServicio } from '../src/servicios/usuario';
 import { categoriasServicio } from '../src/servicios/categoria';
+import { usuarioServicio } from '../src/servicios/usuario';
 import { Categoria } from '../src/tipos/categorias';
 
-const BASE_URL = 'http://192.168.1.4:3000';
+const BASE_URL = 'http://192.168.1.3:3000';
 
 export default function EditarPerfil() {
   const [nombre, setNombre] = useState('');

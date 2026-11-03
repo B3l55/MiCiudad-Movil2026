@@ -30,7 +30,7 @@ export const lugaresMock: Lugar[] = [
     actualizadoEn: "2026-08-01T10:30:00-03:00",
   },
 
-  // Feo 1: cierra los lunes (no hay horario para el día 1) y no es accesible
+  //  1: cierra los lunes (no hay horario para el día 1) y no es accesible
   {
     id: "lug-002",
     nombre: "Molino Forclaz",
@@ -62,7 +62,7 @@ export const lugaresMock: Lugar[] = [
     actualizadoEn: "2026-08-01T10:30:00-03:00",
   },
 
-  // Feo 2: sin audioguía, sin teléfono, sin web, gratis
+  //  2: sin audioguía, sin teléfono, sin web, gratis
   {
     id: "lug-003",
     nombre: "Playa Paso Vela",
@@ -83,7 +83,7 @@ export const lugaresMock: Lugar[] = [
     actualizadoEn: "2026-08-01T10:30:00-03:00",
   },
 
-  // Feo 3: texto larguísimo, sin imágenes, sin horarios, precio null
+  //  3: texto larguísimo, sin imágenes, sin horarios, precio null
   {
     id: "lug-004",
     nombre: "Parque Nacional El Palmar con un nombre exageradamente largo para probar el diseño",
@@ -104,7 +104,7 @@ export const lugaresMock: Lugar[] = [
     actualizadoEn: "2026-08-01T10:30:00-03:00",
   },
 
-  // Feo 4: dado de baja (activo: false) -> no tendría que mostrarse
+  //  4: dado de baja (activo: false) -> no tendría que mostrarse
   {
     id: "lug-005",
     nombre: "Casa de la Cultura (cerrada por obras)",
