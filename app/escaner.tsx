@@ -35,7 +35,7 @@ export default function PantallaEscaner() {
         idDetectado = data.split(':')[1];
       }
 
-      // Validación de QR incorrecto
+      
       if (!idDetectado || typeof idDetectado !== 'string' || !idDetectado.startsWith('lug-')) {
         // Vibración de ERROR
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -44,10 +44,10 @@ export default function PantallaEscaner() {
         return;
       }
 
-      // Vibración de ÉXITO al leer un QR válido
+      
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-      //  La visita se registra en la pantalla siguiente (así hay un solo lugar que la guarda y no se duplica)
+      
       router.replace({
         pathname: '/registro-visita/[id]',
         params: { id: idDetectado, origen: 'qr' },

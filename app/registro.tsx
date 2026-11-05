@@ -47,6 +47,7 @@ export default function RegistroPantalla() {
           <TextInput
             style={estilos.input}
             placeholder="Nombre completo"
+            placeholderTextColor="#666666"
             value={nombre}
             onChangeText={setNombre}
             autoCapitalize="words"
@@ -58,6 +59,7 @@ export default function RegistroPantalla() {
           <TextInput
             style={estilos.input}
             placeholder="Correo electrónico"
+            placeholderTextColor="#666666"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -70,6 +72,7 @@ export default function RegistroPantalla() {
           <TextInput
             style={estilos.input}
             placeholder="Contraseña"
+            placeholderTextColor="#666666"
             value={clave}
             onChangeText={setClave}
             secureTextEntry
@@ -108,7 +111,7 @@ const estilos = StyleSheet.create({
     marginBottom: 16,
     gap: 12,
   },
-  input: { flex: 1, fontSize: 16, color: '#1C1C1E' },
+  input: { flex: 1, fontSize: 16, color: '#000000' },
   botonPrincipal: {
     backgroundColor: '#0B5394',
     height: 56,

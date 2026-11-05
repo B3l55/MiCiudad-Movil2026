@@ -6,7 +6,7 @@ import 'react-native-reanimated';
 // import { useColorScheme } from '@/hooks/useColorScheme';
 
 export const unstable_settings = {
-  // Le indicamos a Expo que arranque por nuestro redirect renombrado
+ 
   initialRouteName: 'splash',
 };
 

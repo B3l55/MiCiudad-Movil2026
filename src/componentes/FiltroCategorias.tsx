@@ -51,7 +51,7 @@ const estilos = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    minHeight: 44, // botón grande, se usa con una mano
+    minHeight: 44, 
     paddingHorizontal: 14,
     borderRadius: 22,
     backgroundColor: '#FFFFFF',

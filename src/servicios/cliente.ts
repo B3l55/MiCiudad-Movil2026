@@ -1,8 +1,8 @@
 // src/servicios/cliente.ts
 import * as SecureStore from 'expo-secure-store';
 
-// REVISÁ QUE ESTA SEA TU IP LOCAL EXACTA (ipconfig en PowerShell)
-import { BASE_URL } from '../config/api'; 
+
+import { BASE_URL } from '../config/api';
 
 export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   try {

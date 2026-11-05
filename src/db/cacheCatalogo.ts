@@ -7,11 +7,11 @@ import { obtenerBase } from './baseLocal';
 let colaEscritura: Promise<unknown> = Promise.resolve();
 const enCola = <T>(tarea: () => Promise<T>): Promise<T> => {
   const resultado = colaEscritura.then(tarea);
-  colaEscritura = resultado.catch(() => undefined); // si una falla, la fila sigue
+  colaEscritura = resultado.catch(() => undefined); 
   return resultado;
 };
 
-// Guarda cada lugar (INSERT OR REPLACE) y borra los que ya no vienen de la API (dados de baja)
+
 export const guardarLugares = (lugares: Lugar[]): Promise<void> =>
   enCola(async () => {
     const db = await obtenerBase();

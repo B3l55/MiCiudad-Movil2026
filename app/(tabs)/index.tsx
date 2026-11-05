@@ -26,7 +26,7 @@ import { Categoria } from '../../src/tipos/categorias';
 import { Lugar } from '../../src/tipos/lugares';
 import { distanciaMetros, formatearDistancia } from '../../src/utilidades/distancia';
 
-//  true = react-native-maps (mapa nuevo), false = Leaflet (el que ya se ve bien)
+
 const USAR_MAPA_NUEVO = false;
 
 export default function PantallaInicio() {
@@ -38,7 +38,7 @@ export default function PantallaInicio() {
   const [categoriasFavoritas, setCategoriasFavoritas] = useState<string[]>([]);
   const [nombreUsuario, setNombreUsuario] = useState<string>('');
 
-  // Ubicación del usuario (si niega el permiso, ubicacion queda en null y todo sigue andando)
+  
   const { ubicacion, permiso } = useUbicacion();
 
   useFocusEffect(
@@ -47,7 +47,7 @@ export default function PantallaInicio() {
       const cargarDatosYPreferencias = async () => {
         setCargando(true);
         try {
-          //  Cargamos las preferencias guardadas en SecureStore
+          
           const infoStr = await SecureStore.getItemAsync('usuario_info');
           if (infoStr && !cancelado) {
             const usuario = JSON.parse(infoStr);
@@ -56,8 +56,7 @@ export default function PantallaInicio() {
             }
           }
 
-          //  Cargamos lugares, categorías y perfil desde el servidor SECUENCIALMENTE
-          // para evitar que colisionen las transacciones de SQLite al guardar la caché.
+         
           const resLugares = await lugaresServicio.obtenerLugares();
           const resCategorias = await categoriasServicio.obtenerCategorias();
           const perfil = await usuarioServicio.obtenerPerfil().catch(() => null);
@@ -92,7 +91,7 @@ export default function PantallaInicio() {
   const obtenerLat = (l: Lugar) => Number(String(l.coordenadas?.latitud ?? (l.coordenadas as any)?.lat ?? '-32.2230').replace(',', '.'));
   const obtenerLng = (l: Lugar) => Number(String(l.coordenadas?.longitud ?? (l.coordenadas as any)?.lng ?? '-58.1415').replace(',', '.'));
 
-  // Cada lugar con su distancia al usuario, del más cerca al más lejos (si hay ubicación)
+  
   const lugaresOrdenados = useMemo(() => {
     const conDistancia = lugaresFiltrados.map((lugar) => ({
       lugar,

@@ -1,13 +1,12 @@
 {
   "expo": {
-    "name": "MiCiudad",
+    "name": "Mi Ciudad",
     "slug": "MiCiudad",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "miciudad",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
     },
@@ -16,18 +15,21 @@
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png",
-        "usesCleartextTraffic": true
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
+      "package": "com.be5.MiCiudad",
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
-      ],
-      "package": "com.be5.MiCiudad"
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ]
     },
     "web": {
       "output": "static",
@@ -55,7 +57,11 @@
       "expo-font",
       "expo-image",
       "expo-status-bar",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-image-picker",
+      "expo-camera",
+      "expo-location",
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true,

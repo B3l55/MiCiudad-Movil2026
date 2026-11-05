@@ -1,13 +1,12 @@
 // src/utilidades/fotoTemporal.ts
-let fotoPendiente: string | null = null;
+let uriTemporal: string | null = null;
 
 export const guardarFotoTemporal = (uri: string) => {
-  fotoPendiente = uri;
+  uriTemporal = uri;
 };
 
-// Devuelve la foto y vacía el buzón
-export const tomarFotoTemporal = (): string | null => {
-  const uri = fotoPendiente;
-  fotoPendiente = null;
+export const obtenerFotoTemporal = (): string | null => {
+  const uri = uriTemporal;
+  uriTemporal = null; 
   return uri;
 };

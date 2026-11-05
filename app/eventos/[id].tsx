@@ -113,7 +113,7 @@ export default function DetalleEvento() {
             setProcesandoAdmin(true);
             try {
               await eventosServicio.actualizarEstado(String(id), nuevoEstado);
-              // Actualizamos la pantalla sin recargar
+              
               setEvento((prev: any) => ({ ...prev, estado: nuevoEstado }));
               Alert.alert('Éxito', `Evento marcado como ${nuevoEstado}.`);
             } catch (err: any) {

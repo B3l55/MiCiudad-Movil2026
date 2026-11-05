@@ -3,7 +3,7 @@ import * as SQLite from 'expo-sqlite';
 
 let promesaBase: Promise<SQLite.SQLiteDatabase> | null = null;
 
-// Abre la base una sola vez y la reutiliza en toda la app
+
 export const obtenerBase = (): Promise<SQLite.SQLiteDatabase> => {
   if (!promesaBase) {
     promesaBase = (async () => {

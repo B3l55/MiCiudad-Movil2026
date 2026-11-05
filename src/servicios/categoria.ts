@@ -12,7 +12,7 @@ export const categoriasServicio = {
       await guardarCategorias(res.datos || []).catch((e) => console.log('No se pudieron guardar las categorías:', e));
       return res;
     } catch (error) {
-      // Sin conexión: devolvemos lo último que se guardó
+      
       const guardadas = await leerCategorias();
       if (guardadas.length === 0) throw error;
       return {

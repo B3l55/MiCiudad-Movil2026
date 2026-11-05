@@ -28,7 +28,7 @@ export function useUbicacion() {
       const actual = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       setUbicacion({ latitud: actual.coords.latitude, longitud: actual.coords.longitude });
     } catch (error) {
-      // GPS apagado o sin señal: la app sigue funcionando sin el punto del usuario
+      
       console.log('No se pudo obtener la ubicación:', error);
     }
   }, []);

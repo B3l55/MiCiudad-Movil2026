@@ -23,9 +23,9 @@ export const authService = {
         return true;
       }
       return false;
-    } catch (error) {
+       } catch (error) {
       console.error('Error en login:', error);
-      return false;
+      throw error; 
     }
   },
 
@@ -37,11 +37,11 @@ export const authService = {
     await SecureStore.deleteItemAsync('token_sesion');
   },
 
-  //  BIOMETRÍA REAL (Huella/Face ID)
+  //  BIOMETRÍA 
   autenticarConBiometria: async (): Promise<boolean> => {
     try {
       const token = await SecureStore.getItemAsync('token_sesion');
-      if (!token) return false; // Si no hay sesión previa, ni intentamos la biometría
+      if (!token) return false; 
 
       const { success } = await LocalAuthentication.authenticateAsync({
         promptMessage: 'Ingresar a Mi Ciudad Colón',
@@ -57,7 +57,7 @@ export const authService = {
     }
   },
   
-  //  Chequea si el celular tiene lector y si el usuario guardó su huella
+ 
     esBiometriaSoportada: async (): Promise<boolean> => {
     const tieneHardware = await LocalAuthentication.hasHardwareAsync();
     const tieneBiometriaConfigurada = await LocalAuthentication.isEnrolledAsync();

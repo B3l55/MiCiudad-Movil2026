@@ -1,7 +1,7 @@
 // src/componentes/ReproductorAudioguia.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
-import Constants, { ExecutionEnvironment } from 'expo-constants'; // ✏️
+import Constants, { ExecutionEnvironment } from 'expo-constants'; 
 import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -10,15 +10,15 @@ import { Audioguia } from '../tipos/lugares';
 
 interface Props {
   audioguia: Audioguia;
-  titulo: string; // nombre del lugar, se muestra en la pantalla de bloqueo
+  titulo: string; 
 }
 
 const SALTO_SEGUNDOS = 15;
 
-//  Expo Go no incluye el servicio de reproducción en segundo plano: solo existe en un build propio (APK)
+
 const EN_EXPO_GO = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
-// 252 -> "4:12"
+
 const formatear = (segundos: number) => {
   const total = Math.max(0, Math.round(segundos));
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
@@ -29,7 +29,7 @@ export default function ReproductorAudioguia({ audioguia, titulo }: Props) {
   const player = useAudioPlayer(url);
   const estado = useAudioPlayerStatus(player);
 
-  // Permite seguir escuchando con el celular en el bolsillo y en modo silencio
+  
   useEffect(() => {
     setAudioModeAsync({
       playsInSilentMode: true,
@@ -38,7 +38,7 @@ export default function ReproductorAudioguia({ audioguia, titulo }: Props) {
     }).catch(() => {});
   }, []);
 
-  // Al terminar, vuelve al principio
+  
   useEffect(() => {
     if (estado.didJustFinish) {
       player.pause();
@@ -60,7 +60,7 @@ export default function ReproductorAudioguia({ audioguia, titulo }: Props) {
       try {
         player.setActiveForLockScreen(true, { title: titulo, artist: 'Mi Ciudad · Colón' });
       } catch {
-        // si falla, el audio se reproduce igual
+        
       }
     }
     player.play();

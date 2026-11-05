@@ -33,14 +33,14 @@ export default function MapaLugares({ lugares, ubicacionUsuario }: Props) {
         showsMyLocationButton={!!ubicacionUsuario}
       >
         {lugares.map((lugar) => {
-          // Extraemos y limpiamos las coordenadas
+          
           const latRaw = lugar.coordenadas?.latitud ?? (lugar.coordenadas as any)?.lat ?? lugar.latitud;
           const lngRaw = lugar.coordenadas?.longitud ?? (lugar.coordenadas as any)?.lng ?? lugar.longitud;
 
           const lat = Number(String(latRaw || '').replace(',', '.'));
           const lng = Number(String(lngRaw || '').replace(',', '.'));
 
-          // Validamos que sean coordenadas reales antes de intentar dibujar el pin
+          
           if (!lat || !lng || isNaN(lat) || isNaN(lng)) return null;
 
           return (
@@ -48,7 +48,7 @@ export default function MapaLugares({ lugares, ubicacionUsuario }: Props) {
               key={lugar.id}
               coordinate={{ latitude: lat, longitude: lng }}
               title={lugar.nombre}
-              //  Con ubicación muestra la distancia; sin ubicación, la dirección
+              
               description={
                 ubicacionUsuario
                   ? `A ${formatearDistancia(distanciaMetros(ubicacionUsuario, { latitud: lat, longitud: lng }))} · tocá para ver más`

@@ -15,7 +15,6 @@ export default function Login() {
   // Solo mostramos la huella si el celu tiene lector Y si hay sesión
   const [mostrarBiometria, setMostrarBiometria] = useState(false);
   
-  
   const manejarBiometria = async (mostrarAviso = true) => {
     const exito = await authService.autenticarConBiometria();
     if (exito) {
@@ -82,6 +81,7 @@ export default function Login() {
           <TextInput
             style={estilos.input}
             placeholder="Correo electrónico"
+            placeholderTextColor="#666666"
             keyboardType="email-address"
             autoCapitalize="none"
             value={correo}
@@ -91,6 +91,7 @@ export default function Login() {
           <TextInput
             style={estilos.input}
             placeholder="Contraseña"
+            placeholderTextColor="#666666"
             secureTextEntry
             value={contrasena}
             onChangeText={setContrasena}
@@ -156,6 +157,7 @@ const estilos = StyleSheet.create({
   },
   input: {
     backgroundColor: '#FFFFFF',
+    color: '#000000', // <-- ACÁ FORZAMOS LA LETRA NEGRA
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderRadius: 10,

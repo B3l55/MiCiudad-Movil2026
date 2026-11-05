@@ -1,17 +1,40 @@
 // app/(tabs)/recorrido.tsx
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
-import Storage from 'expo-sqlite/kv-store'; 
+import Storage from 'expo-sqlite/kv-store';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native'; 
+import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+
+import { BASE_URL } from '../../src/config/api';
 import { lugaresServicio } from '../../src/servicios/lugares';
 import { visitasServicio } from '../../src/servicios/visitas';
 
-const CLAVE_OCULTAS = 'visitas_ocultas'; 
+const CLAVE_OCULTAS = 'visitas_ocultas';
+
+const NGROK_HEADERS = {
+  'ngrok-skip-browser-warning': 'true',
+  'User-Agent': 'MiCiudadApp',
+};
+
+
+const urlDeArchivo = (url?: string | null): string | null => {
+  if (!url) return null;
+  if (url.startsWith('file://') || url.startsWith('content://') || url.startsWith('ph://')) {
+    return url;
+  }
+  const rutaLimpia = url.replace(/\\/g, '/');
+  const indice = rutaLimpia.indexOf('/archivos/');
+  if (indice !== -1) {
+    return `${BASE_URL}${rutaLimpia.slice(indice)}`;
+  }
+  if (rutaLimpia.startsWith('http')) return rutaLimpia;
+  return `${BASE_URL}${rutaLimpia.startsWith('/') ? '' : '/'}${rutaLimpia}`;
+};
 
 export default function PantallaRecorrido() {
   const [visitas, setVisitas] = useState<any[]>([]);
-  const [ocultas, setOcultas] = useState<string[]>([]); 
+  const [ocultas, setOcultas] = useState<string[]>([]);
   const [nombresLugares, setNombresLugares] = useState<Record<string, string>>({});
   const [cargando, setCargando] = useState(true);
 
@@ -22,14 +45,11 @@ export default function PantallaRecorrido() {
       const cargarRecorrido = async () => {
         setCargando(true);
         try {
-          //  ids que el usuario ocultó en este teléfono
           const guardadas = await Storage.getItem(CLAVE_OCULTAS);
           if (activo) setOcultas(guardadas ? JSON.parse(guardadas) : []);
 
           const datos = await visitasServicio.obtenerVisitas();
-          if (activo) {
-            setVisitas(Array.isArray(datos) ? datos : []);
-          }
+          if (activo) setVisitas(Array.isArray(datos) ? datos : []);
 
           try {
             const resLugares = await lugaresServicio.obtenerLugares();
@@ -37,7 +57,7 @@ export default function PantallaRecorrido() {
             (resLugares.datos || []).forEach((l: any) => { mapa[l.id] = l.nombre; });
             if (activo) setNombresLugares(mapa);
           } catch {
-            // si falla, se muestra "Lugar visitado" como antes
+           
           }
         } catch (error) {
           console.error('Error al cargar visitas:', error);
@@ -52,7 +72,6 @@ export default function PantallaRecorrido() {
     }, [])
   );
 
-  //  Pregunta antes de ocultar y guarda el id en el teléfono
   const confirmarOcultar = (idVisita: string) => {
     Alert.alert(
       'Quitar del recorrido',
@@ -72,7 +91,6 @@ export default function PantallaRecorrido() {
     );
   };
 
-  //  Lo que realmente se muestra
   const visitasVisibles = visitas.filter((v) => !ocultas.includes(String(v.id || v._id)));
 
   if (cargando) {
@@ -87,7 +105,7 @@ export default function PantallaRecorrido() {
     <View style={estilos.contenedor}>
       <Text style={estilos.titulo}>Mi Recorrido</Text>
 
-      {visitasVisibles.length === 0 ? ( 
+      {visitasVisibles.length === 0 ? (
         <View style={estilos.estadoVacio}>
           <Ionicons name="map-outline" size={64} color="#9CA3AF" />
           <Text style={estilos.textoVacio}>Tu recorrido está vacío.</Text>
@@ -97,45 +115,58 @@ export default function PantallaRecorrido() {
         </View>
       ) : (
         <FlatList
-          data={visitasVisibles} 
+          data={visitasVisibles}
           keyExtractor={(item) => String(item.id || item._id || Math.random())}
           contentContainerStyle={estilos.lista}
-          renderItem={({ item }) => (
-            <Pressable
-              style={estilos.tarjeta}
-              onPress={() => item.lugarId && router.push(`/lugares/${item.lugarId}` as any)}
-            >
-              <View style={estilos.iconoContainer}>
-                <Ionicons name="checkmark-circle" size={28} color="#10B981" />
-              </View>
-              <View style={estilos.infoTarjeta}>
-                <Text style={estilos.nombreLugar}>
-                  {item.lugar?.nombre || nombresLugares[item.lugarId] || 'Lugar visitado'}
-                </Text>
-                <Text style={estilos.fecha}>
-                  {item.fechaHora || item.creadoEn || item.fecha ? new Date(item.fechaHora || item.creadoEn || item.fecha).toLocaleDateString('es-AR', {
-                    day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
-                  }) : ''}
-                </Text>
-                {item.fotoUri && (
-                  <Image source={{ uri: item.fotoUri }} style={estilos.foto} />
-                )}
-                {item.nota && (
-                  <View style={estilos.notaContainer}>
-                    <Text style={estilos.nota}>"{item.nota}"</Text>
-                  </View>
-                )}
-              </View>
-              {/*  botón de quitar */}
+          renderItem={({ item }) => {
+            
+            const uriCruda = item.fotoUri || item.fotoLocal || item.foto || item.fotoUrl || item.imagen;
+            const uriFoto = urlDeArchivo(uriCruda);
+
+            return (
               <Pressable
-                style={estilos.botonQuitar}
-                onPress={() => confirmarOcultar(String(item.id || item._id))}
-                hitSlop={8}
+                style={estilos.tarjeta}
+                onPress={() => item.lugarId && router.push(`/lugares/${item.lugarId}` as any)}
               >
-                <Ionicons name="trash-outline" size={22} color="#D32F2F" />
+                <View style={estilos.iconoContainer}>
+                  <Ionicons name="checkmark-circle" size={28} color="#10B981" />
+                </View>
+                <View style={estilos.infoTarjeta}>
+                  <Text style={estilos.nombreLugar}>
+                    {item.lugar?.nombre || nombresLugares[item.lugarId] || 'Lugar visitado'}
+                  </Text>
+                  <Text style={estilos.fecha}>
+                    {item.fechaHora || item.creadoEn || item.fecha ? new Date(item.fechaHora || item.creadoEn || item.fecha).toLocaleDateString('es-AR', {
+                      day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
+                    }) : ''}
+                  </Text>
+
+                  {uriFoto && (
+                    <Image
+                      source={{ uri: uriFoto, headers: NGROK_HEADERS }}
+                      style={estilos.foto}
+                      contentFit="cover"
+                      transition={200}
+                    />
+                  )}
+
+                  {item.nota && (
+                    <View style={estilos.notaContainer}>
+                      <Text style={estilos.nota}>"{item.nota}"</Text>
+                    </View>
+                  )}
+                </View>
+
+                <Pressable
+                  style={estilos.botonQuitar}
+                  onPress={() => confirmarOcultar(String(item.id || item._id))}
+                  hitSlop={8}
+                >
+                  <Ionicons name="trash-outline" size={22} color="#D32F2F" />
+                </Pressable>
               </Pressable>
-            </Pressable>
-          )}
+            );
+          }}
         />
       )}
     </View>
@@ -158,5 +189,5 @@ const estilos = StyleSheet.create({
   foto: { width: '100%', height: 150, borderRadius: 8, marginBottom: 6, backgroundColor: '#E5E7EB' },
   notaContainer: { backgroundColor: '#F3F4F6', padding: 8, borderRadius: 8, marginTop: 4 },
   nota: { fontSize: 14, color: '#4B5563', fontStyle: 'italic' },
-  botonQuitar: { alignSelf: 'center', padding: 6, marginLeft: 8 }, 
+  botonQuitar: { alignSelf: 'center', padding: 6, marginLeft: 8 },
 });

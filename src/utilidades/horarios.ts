@@ -7,7 +7,7 @@ export interface EstadoApertura {
 
 const NOMBRES_DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 
-// "09:30" -> 570 (minutos desde la medianoche), así se pueden comparar con < y >
+
 const aMinutos = (hora: string) => {
   const [h, m] = hora.split(':').map(Number);
   return h * 60 + m;
@@ -23,7 +23,7 @@ export const calcularEstadoApertura = (
     return { abierto: null, texto: 'Horario no disponible' };
   }
 
-  const hoy = ahora.getDay(); // 0 = domingo, igual que en el tipo Horario
+  const hoy = ahora.getDay(); 
   const minutosAhora = ahora.getHours() * 60 + ahora.getMinutes();
   const deHoy = horarios.filter((h) => h.dia === hoy);
 

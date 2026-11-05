@@ -1,18 +1,48 @@
 // app/registro-visita/[id].tsx
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { BASE_URL } from '../../src/config/api';
 import { visitasServicio } from '../../src/servicios/visitas';
+import { obtenerFotoTemporal } from '../../src/utilidades/fotoTemporal';
+
+const NGROK_HEADERS = {
+  'ngrok-skip-browser-warning': 'true',
+  'User-Agent': 'MiCiudadApp',
+};
+
+const urlDeArchivo = (url?: string | null): string | null => {
+  if (!url) return null;
+  if (url.startsWith('file://') || url.startsWith('content://') || url.startsWith('ph://')) {
+    return url;
+  }
+  const rutaLimpia = url.replace(/\\/g, '/');
+  const indice = rutaLimpia.indexOf('/archivos/');
+  if (indice !== -1) {
+    return `${BASE_URL}${rutaLimpia.slice(indice)}`;
+  }
+  if (rutaLimpia.startsWith('http')) return rutaLimpia;
+  return `${BASE_URL}${rutaLimpia.startsWith('/') ? '' : '/'}${rutaLimpia}`;
+};
 
 export default function RegistrarVisita() {
-  // id del LUGAR que se está visitando
   const { id } = useLocalSearchParams();
   const [nota, setNota] = useState('');
   const [fotoUri, setFotoUri] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      const fotoCapturada = obtenerFotoTemporal();
+      if (fotoCapturada) {
+        setFotoUri(fotoCapturada);
+      }
+    }, [])
+  );
 
   const elegirDeGaleria = async () => {
     const permiso = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -30,25 +60,13 @@ export default function RegistrarVisita() {
     }
   };
 
-  const sacarFoto = async () => {
-    const permiso = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permiso.granted) {
-      Alert.alert('Permiso requerido', 'Se necesita acceso a la cámara para sacar la foto. Podés elegir una de la galería.');
-      return;
-    }
-    const resultado = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images'],
-      quality: 0.5,
-    });
-    if (!resultado.canceled && resultado.assets[0].uri) {
-      setFotoUri(resultado.assets[0].uri);
-    }
+  const sacarFoto = () => {
+    router.push('/camara' as any);
   };
 
   const guardarVisita = async () => {
     setGuardando(true);
     try {
-      // Se guarda primero en el teléfono; si hay señal se sube al instante
       const { sincronizada } = await visitasServicio.registrarVisita({
         lugarId: String(id),
         origen: 'manual',
@@ -61,7 +79,7 @@ export default function RegistrarVisita() {
         sincronizada
           ? 'Visita registrada con éxito.'
           : 'No hay conexión. Guardamos tu visita en el teléfono y se subirá sola cuando vuelva la señal.',
-        [{ text: 'OK', onPress: () => router.back() }]
+        [{ text: 'OK', onPress: () => router.replace('/recorrido' as any) }]
       );
     } catch (error: any) {
       Alert.alert('Error al guardar', error.message || 'No se pudo registrar la visita.');
@@ -69,6 +87,8 @@ export default function RegistrarVisita() {
       setGuardando(false);
     }
   };
+
+  const fotoVistaPrevia = urlDeArchivo(fotoUri);
 
   return (
     <View style={estilos.contenedor}>
@@ -81,8 +101,16 @@ export default function RegistrarVisita() {
         {/* Sección Foto */}
         <Text style={estilos.etiqueta}>Foto (opcional)</Text>
         <View style={estilos.cajaFoto}>
-          {fotoUri ? (
-            <Image source={{ uri: fotoUri }} style={estilos.imagen} />
+          {fotoVistaPrevia ? (
+            <Image
+              source={{
+                uri: fotoVistaPrevia,
+                headers: NGROK_HEADERS,
+              }}
+              style={estilos.imagen}
+              contentFit="cover"
+              transition={200}
+            />
           ) : (
             <View style={estilos.placeholderFoto}>
               <Ionicons name="image-outline" size={32} color="#9CA3AF" />
@@ -107,7 +135,7 @@ export default function RegistrarVisita() {
           <TextInput
             style={estilos.input}
             placeholder="¿Qué te pareció este lugar?"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor="#666666"
             multiline
             numberOfLines={4}
             value={nota}
@@ -151,7 +179,7 @@ const estilos = StyleSheet.create({
   },
   placeholderFoto: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 8 },
   textoFoto: { color: '#6B7280', fontWeight: '500' },
-  imagen: { width: '100%', height: '100%', resizeMode: 'cover' },
+  imagen: { width: '100%', height: '100%' },
   filaBotonesFoto: { flexDirection: 'row', gap: 12, marginBottom: 24 },
   botonFoto: {
     flex: 1,
@@ -174,7 +202,7 @@ const estilos = StyleSheet.create({
     borderColor: '#E5E5EA',
     marginBottom: 32,
   },
-  input: { fontSize: 16, color: '#1C1C1E', minHeight: 100 },
+  input: { fontSize: 16, color: '#000000', minHeight: 100 },
   botonPrincipal: {
     backgroundColor: '#0B5394',
     height: 56,

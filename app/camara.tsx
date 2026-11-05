@@ -25,7 +25,7 @@ export default function PantallaCamara() {
     );
   }
 
-  // Si no da permiso, la app sigue usable: puede volver y elegir una foto de la galería
+  
   if (!permiso.granted) {
     return (
       <View style={estilos.centrado}>
@@ -51,13 +51,21 @@ export default function PantallaCamara() {
     if (!camaraRef.current || sacando) return;
     setSacando(true);
     try {
-      const foto = await camaraRef.current.takePictureAsync({ 
-  quality: 0.3, 
-  skipProcessing: true 
-});
+      console.log('CÁMARA → sacando foto');
+      const foto = await camaraRef.current.takePictureAsync({
+        quality: 0.3,
+        skipProcessing: true,
+        shutterSound: false,
+      });
+      console.log('CÁMARA → foto lista:', foto?.uri);
       if (foto?.uri) {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        guardarFotoTemporal(foto.uri);
+        try {
+          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        } catch {
+          
+        }
+        await guardarFotoTemporal(foto.uri);
+        console.log('CÁMARA → volviendo');
         router.back();
       }
     } catch (error) {
@@ -106,13 +114,13 @@ export default function PantallaCamara() {
 
 const estilos = StyleSheet.create({
   contenedor: { flex: 1, backgroundColor: '#000' },
-camara: {
-  position: 'absolute',
-  top: 0,
-  bottom: 0,
-  left: 0,
-  right: 0,
-},
+  camara: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
   centrado: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: '#F2F2F7', gap: 16 },
   textoPermiso: { textAlign: 'center', fontSize: 16, color: '#374151', lineHeight: 22 },
   botonPrincipal: { backgroundColor: '#0B5394', paddingHorizontal: 24, paddingVertical: 14, borderRadius: 10 },

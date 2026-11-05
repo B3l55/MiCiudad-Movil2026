@@ -1,14 +1,30 @@
 // app/lugares/[id].tsx
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 
 import ReproductorAudioguia from '../../src/componentes/ReproductorAudioguia';
+import { BASE_URL } from '../../src/config/api';
 import { favoritosServicio } from '../../src/servicios/favoritos';
 import { lugaresServicio } from '../../src/servicios/lugares';
 import { Lugar } from '../../src/tipos/lugares';
+
+const obtenerUrlCompleta = (ruta: string | null) => {
+  if (!ruta) return null;
+  if (ruta.startsWith('file://') || ruta.startsWith('content://') || ruta.startsWith('ph://')) {
+    return ruta;
+  }
+  const rutaLimpia = ruta.replace(/\\/g, '/');
+  const indice = rutaLimpia.indexOf('/archivos/');
+  if (indice !== -1) {
+    return `${BASE_URL}${rutaLimpia.slice(indice)}`;
+  }
+  if (rutaLimpia.startsWith('http')) return rutaLimpia;
+  return `${BASE_URL}${rutaLimpia.startsWith('/') ? '' : '/'}${rutaLimpia}`;
+};
 
 export default function DetalleLugarPantalla() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -56,7 +72,6 @@ export default function DetalleLugarPantalla() {
     }
   };
 
-  // --- FORMATEADOR DE HORARIOS INTELIGENTE ---
   const formatearHorarios = (data: any): string => {
     if (!data) return 'Abierto - Consultar horarios';
     if (typeof data === 'string') return data;
@@ -120,11 +135,13 @@ export default function DetalleLugarPantalla() {
     );
   }
 
-  // --- BUSQUEDA Y FORMATEO DE DATOS ---
   const lat = Number(String(lugar.coordenadas?.latitud ?? (lugar.coordenadas as any)?.lat ?? '-32.2230').replace(',', '.'));
   const lng = Number(String(lugar.coordenadas?.longitud ?? (lugar.coordenadas as any)?.lng ?? '-58.1415').replace(',', '.'));
 
-  //  Busca por nombre y dirección (las coordenadas de la demo son aproximadas); si no hay dirección, usa las coordenadas
+  const fotoLugarUrl = obtenerUrlCompleta(
+    (lugar as any).imagenUrl || (lugar as any).imagen || (lugar as any).foto || (lugar as any).fotoUrl || null
+  );
+
   const abrirGoogleMaps = () => {
     const consulta = lugar.direccion
       ? encodeURIComponent(`${lugar.nombre}, ${lugar.direccion}, Entre Ríos, Argentina`)
@@ -186,7 +203,6 @@ export default function DetalleLugarPantalla() {
       <Stack.Screen options={{ headerShown: false }} />
 
       <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
-
         {/* Cabecera */}
         <View style={estilos.imagenHeader}>
           <Pressable style={[estilos.botonFlotante, { left: 16 }]} onPress={() => router.back()}>
@@ -200,12 +216,27 @@ export default function DetalleLugarPantalla() {
               <Ionicons name={esFavorito ? "heart" : "heart-outline"} size={24} color={esFavorito ? "#E63946" : "#1C1C1E"} />
             )}
           </Pressable>
-          <Ionicons name="image-outline" size={60} color="#9CA3AF" />
+
+          {fotoLugarUrl ? (
+            <Image
+              source={{
+                uri: fotoLugarUrl,
+                headers: {
+                  'ngrok-skip-browser-warning': 'true',
+                  'User-Agent': 'MiCiudadApp',
+                },
+              }}
+              style={estilos.imagenFondo}
+              contentFit="cover"
+              transition={200}
+            />
+          ) : (
+            <Ionicons name="image-outline" size={60} color="#9CA3AF" />
+          )}
         </View>
 
         {/* Cuerpo */}
         <View style={estilos.cuerpo}>
-
           <Text style={estilos.nombreLugar}>{String(lugar.nombre)}</Text>
 
           {/* Horarios Formateados */}
@@ -251,7 +282,7 @@ export default function DetalleLugarPantalla() {
             </Pressable>
           </View>
 
-          {/*  Audioguía: solo si el lugar tiene */}
+          {/* Audioguía: solo si el lugar tiene */}
           {lugar.audioguia && (
             <ReproductorAudioguia audioguia={lugar.audioguia} titulo={lugar.nombre} />
           )}
@@ -270,7 +301,6 @@ export default function DetalleLugarPantalla() {
             <Ionicons name="camera" size={20} color="#FFFFFF" />
             <Text style={estilos.textoBotonVisita}>Registrar Visita</Text>
           </Pressable>
-
         </View>
       </ScrollView>
     </View>
@@ -280,9 +310,10 @@ export default function DetalleLugarPantalla() {
 const estilos = StyleSheet.create({
   contenedorPrincipal: { flex: 1, backgroundColor: '#FFFFFF' },
   centrado: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  imagenHeader: { height: 280, backgroundColor: '#E5E5EA', justifyContent: 'center', alignItems: 'center', position: 'relative' },
+  imagenHeader: { height: 280, backgroundColor: '#E5E5EA', justifyContent: 'center', alignItems: 'center', position: 'relative', overflow: 'hidden' },
+  imagenFondo: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' },
   botonFlotante: { position: 'absolute', top: 50, backgroundColor: 'rgba(255, 255, 255, 0.9)', padding: 10, borderRadius: 20, zIndex: 10, elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4 },
-  cuerpo: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, marginTop: -24, padding: 20, minHeight: 600 },
+  cuerpo: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, marginTop: -24, padding: 20, minHeight: 600, zIndex: 5 },
   nombreLugar: { fontSize: 26, fontWeight: 'bold', color: '#1C1C1E', marginBottom: 16 },
   filaDato: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
   textoDato: { fontSize: 15, color: '#5C6B7A', flex: 1 },

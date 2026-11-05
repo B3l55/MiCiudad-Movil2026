@@ -12,7 +12,7 @@ async function obtenerHeaders() {
 }
 
 export const favoritosServicio = {
-  // Obtener la lista de favoritos
+  
   obtenerFavoritosIds: async (): Promise<string[]> => {
     try {
       const headers = await obtenerHeaders();
@@ -37,7 +37,7 @@ export const favoritosServicio = {
     }
   },
 
-  //  Agregar un favorito (PUT a la URL con el ID)
+  
   agregarFavorito: async (id: string): Promise<boolean> => {
     const headers = await obtenerHeaders();
     const respuesta = await fetch(`${BASE_URL}/yo/favoritos/${id}`, {
@@ -53,7 +53,7 @@ export const favoritosServicio = {
     return true;
   },
 
-  //  Eliminar un favorito (DELETE a la URL con el ID)
+  
   eliminarFavorito: async (id: string): Promise<boolean> => {
     const headers = await obtenerHeaders();
     const respuesta = await fetch(`${BASE_URL}/yo/favoritos/${id}`, {

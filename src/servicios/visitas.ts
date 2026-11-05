@@ -218,4 +218,10 @@ export const visitasServicio = {
     if (!respuesta.ok) throw await leerError(respuesta, 'Error al actualizar la visita');
     return await respuesta.json();
   },
+
+  marcarComoSincronizada: async (id: string): Promise<void> => {
+    // Reemplazá esto con tu consulta SQLite real si usás expo-sqlite, por ejemplo:
+    // await db.runAsync('UPDATE visitas SET sincronizada = 1 WHERE id = ?', [id]);
+    console.log(`Visita ${id} marcada como sincronizada en SQLite.`);
+  },
 };

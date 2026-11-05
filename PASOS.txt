@@ -70,8 +70,8 @@ Favoritos y Almacenamiento Offline: El botón de "corazoncito" para guardar luga
 
 ----------------------------------------------------------------------
 abrir docker
+docker compose -f compose.postgres.yaml down -v
 docker compose -f compose.postgres.yaml up
-docker compose -f compose.postgres.yaml logs --tail=50 -f api
 
 abrir front npx expo start -c
 

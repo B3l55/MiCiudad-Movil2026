@@ -18,7 +18,7 @@ export default function IndexRedirect() {
       if (!token) {
         router.replace('/(auth)/login');
       } else {
-        //  RESTAURADO: Si hay sesión, va directo al menú principal
+        
         router.replace('/(tabs)');
       }
       
