@@ -1,50 +1,36 @@
-# Welcome to your Expo app 👋
+#  Mi Ciudad - Guía Turística de Colón
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Trabajo Final Integrador (TFI) - Aplicación móvil diseñada para potenciar la experiencia turística en la ciudad de Colón, Entre Ríos. 
 
-## Get started
+##  Características Principales
 
-1. Install dependencies
+**Para el Turista:**
+* **Exploración y Filtros:** Búsqueda en tiempo real de puntos de interés.
+* **Detalle Interactivo:** Integración de audioguías, mapas interactivos  y contacto directo.
+* **Gamificación (Escáner QR):** Lector de códigos QR en puntos turísticos para registrar visitas y guardar recuerdos fotográficos.
+* **Personalización:** Gestión de lugares Favoritos y guardado de Eventos en la Agenda personal.
+* **Mi Recorrido:** historial de lugares visitados y fotografías.
 
-   ```bash
-   npm install
-   ```
+**Para el Administrador (Municipio):**
+* **Gestión de Eventos:**  agenda local con capacidad de suspender o cancelar eventos en tiempo real ante imprevistos.
+* **Control de Accesos:** Interfaz adaptable según el rol del usuario (Role-Based Access Control).
 
-2. Start the app
 
-   ```bash
-   npx expo start
-   ```
 
-In the output, you'll find options to open the app in a
+##  Aclaración Importante para la Corrección (Entorno Ngrok)
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+El sistema backend de este proyecto se encuentra configurado para ejecutarse en un entorno local mediante contenedores **Docker**. 
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+Para permitir la comunicación entre la aplicación móvil (instalada en un dispositivo físico mediante el APK autónomo) y la base de datos local, **el puerto del servidor se expuso a internet utilizando un túnel inverso de Ngrok.**
 
-## Get a fresh project
+### Pasos para probar la aplicación en un entorno propio:
 
-When you're ready, run:
+Si el equipo  desea levantar el proyecto desde el código fuente y conectar el APK a su propio entorno local, deben seguir estos pasos:
 
-```bash
-npm run reset-project
-```
+1. Levantar el entorno de backend con Docker y ejecutar su propia instancia de Ngrok (ej: `ngrok http 3000`).
+2. En el código fuente del frontend, dirigirse al archivo de  configuración de API (`src/config/api.ts`).
+3. Reemplazar la URL base actual por la nueva URL generada por su túnel de Ngrok.
+   actualmente es= export const BASE_URL = 'https://usage-excavator-eating.ngrok-free.dev';
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+   # Ejemplo:
+   export const BASE_URL=[https://su-nueva-url.ngrok-free.app/api](https://su-nueva-url.ngrok-free.app/api)

@@ -44,7 +44,7 @@ export const guardarPendiente = async (visita: Omit<VisitaPendiente, 'intentos'>
   );
 };
 
-// De la más vieja a la más nueva
+
 export const leerPendientes = async (): Promise<VisitaPendiente[]> => {
   const db = await obtenerBase();
   const filas = await db.getAllAsync<Fila>('SELECT * FROM visitas_pendientes ORDER BY fecha_hora ASC');

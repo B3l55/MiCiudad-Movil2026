@@ -1,0 +1,14 @@
+
+abrir docker
+docker compose -f compose.postgres.yaml down -v
+docker compose -f compose.postgres.yaml up
+
+abrir front npx expo start -c
+
+---------------------------------------------------------------------------
+reiniciar docker=
+
+docker compose -f compose.postgres.yaml down -v
+
+docker compose -f compose.postgres.yaml up
+
