@@ -1,36 +1,44 @@
-#  Mi Ciudad - Guía Turística de Colón
+TFI - "Mi Ciudad" | Documentación del Proyecto y Despliegue en Producción
 
-Trabajo Final Integrador (TFI) - Aplicación móvil diseñada para potenciar la experiencia turística en la ciudad de Colón, Entre Ríos. 
-
-##  Características Principales
-
-**Para el Turista:**
-* **Exploración y Filtros:** Búsqueda en tiempo real de puntos de interés.
-* **Detalle Interactivo:** Integración de audioguías, mapas interactivos  y contacto directo.
-* **Gamificación (Escáner QR):** Lector de códigos QR en puntos turísticos para registrar visitas y guardar recuerdos fotográficos.
-* **Personalización:** Gestión de lugares Favoritos y guardado de Eventos en la Agenda personal.
-* **Mi Recorrido:** historial de lugares visitados y fotografías.
-
-**Para el Administrador (Municipio):**
-* **Gestión de Eventos:**  agenda local con capacidad de suspender o cancelar eventos en tiempo real ante imprevistos.
-* **Control de Accesos:** Interfaz adaptable según el rol del usuario (Role-Based Access Control).
+Este repositorio contiene la arquitectura backend y frontend del Trabajo Final Integrador (TFI) "Mi Ciudad"
 
 
+ Endpoints y Servicios en Producción
 
-##  Aclaración Importante para la Corrección (Entorno Ngrok)
+URL Base de la API (Render): https://api-mi-ciudad-95x9.onrender.com
 
-El sistema backend de este proyecto se encuentra configurado para ejecutarse en un entorno local mediante contenedores **Docker**. 
+Documentación / Endpoints Principales:
 
-Para permitir la comunicación entre la aplicación móvil (instalada en un dispositivo físico mediante el APK autónomo) y la base de datos local, **el puerto del servidor se expuso a internet utilizando un túnel inverso de Ngrok.**
+/lugares: Listado general de puntos de interés y geolocalización.
 
-### Pasos para probar la aplicación en un entorno propio:
+/categorias: Gestión de clasificaciones turísticas/municipales.
 
-Si el equipo  desea levantar el proyecto desde el código fuente y conectar el APK a su propio entorno local, deben seguir estos pasos:
+/auth & /perfil: Autenticación de usuarios mediante tokens y gestión de perfiles.
 
-1. Levantar el entorno de backend con Docker y ejecutar su propia instancia de Ngrok (ej: `ngrok http 3000`).
-2. En el código fuente del frontend, dirigirse al archivo de  configuración de API (`src/config/api.ts`).
-3. Reemplazar la URL base actual por la nueva URL generada por su túnel de Ngrok.
-   actualmente es= export const BASE_URL = 'https://usage-excavator-eating.ngrok-free.dev';
+ Configuración y Despliegue
 
-   # Ejemplo:
-   export const BASE_URL=[https://su-nueva-url.ngrok-free.app/api](https://su-nueva-url.ngrok-free.app/api)
+1. Backend (Render & Supabase)
+
+El despliegue del backend se realiza de manera automatizada conectando el repositorio de GitHub con Render utilizando un archivo Dockerfile. Las siguientes variables de entorno son requeridas obligatoriamente en el panel de Render:
+
+PORT=3000
+DB_URL=postgresql://[usuario]:[password]@[host]:5432/postgres
+SUPABASE_PROYECTO=[id_proyecto]
+S3_REGION=us-west-2
+S3_BUCKET=archivos
+S3_ACCESS_KEY_ID=[s3_access_key]
+S3_SECRET_ACCESS_KEY=[s3_secret_key]
+
+
+2. Frontend Móvil
+
+Para conectar la aplicación móvil al backend en producción, se configura la URL base en los servicios de red del cliente:
+
+export const BASE_URL = 'https://api-mi-ciudad-95x9.onrender.com';
+
+
+Para compilar una nueva versión nativa (APK) apuntando a la nube:
+
+eas build --platform android --profile preview
+
+
