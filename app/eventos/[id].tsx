@@ -48,14 +48,14 @@ export default function DetalleEvento() {
   const [error, setError] = useState<string | null>(null);
   const [guardado, setGuardado] = useState(false);
 
-  // Estado para saber si es Turismo
+  
   const [esAdmin, setEsAdmin] = useState(false);
   const [procesandoAdmin, setProcesandoAdmin] = useState(false);
 
   useEffect(() => {
     const cargar = async () => {
       try {
-        // Le pedimos el perfil real al backend para asegurar que lea el email exacto
+        
         const perfil = await usuarioServicio.obtenerPerfil().catch(() => null);
         if (perfil && perfil.email === 'turismo@colon.demo.ar') {
           setEsAdmin(true);
@@ -96,7 +96,7 @@ export default function DetalleEvento() {
     }
   };
 
-  // Maneja los botones de administración de Turismo
+  
   const cambiarEstadoAdmin = async (nuevoEstado: 'programado' | 'suspendido' | 'cancelado') => { 
     const accion = nuevoEstado === 'cancelado' ? 'Cancelar' : nuevoEstado === 'suspendido' ? 'Suspender' : 'Reprogramar'; 
     Alert.alert(

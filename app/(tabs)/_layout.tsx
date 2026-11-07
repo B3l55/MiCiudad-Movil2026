@@ -1,19 +1,19 @@
 // app/(tabs)/_layout.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { useEffect } from 'react'; 
+import { useEffect } from 'react';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import AvisoSinConexion from '../../src/componentes/AvisoSinConexion';
-import { useRed } from '../../src/hooks/useRed'; 
-import { sincronizarVisitasPendientes } from '../../src/servicios/visitas'; 
+import { useRed } from '../../src/hooks/useRed';
+import { sincronizarVisitasPendientes } from '../../src/servicios/visitas';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const { sinConexion } = useRed(); 
 
-  //  Cuando hay conexión (al abrir la app o cuando vuelve), subimos las visitas guardadas en el teléfono
+  
   useEffect(() => {
     if (!sinConexion) {
       sincronizarVisitasPendientes().catch((error) => console.log('Error al sincronizar visitas:', error));

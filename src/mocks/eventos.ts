@@ -2,8 +2,7 @@ import { Evento } from '../tipos/eventos';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
-// Genera una fecha ISO relativa a hoy: enDias(0, "21:00") = hoy a las 21:00
-// (Argentina no usa horario de verano, así que la zona es siempre -03:00)
+
 const enDias = (dias: number, hora: string): string => {
   const d = new Date();
   d.setDate(d.getDate() + dias);
@@ -11,7 +10,7 @@ const enDias = (dias: number, hora: string): string => {
 };
 
 export const eventosMock: Evento[] = [
-  // Normal: gratis, hoy, en un lugar sin catálogo (dirección libre + coordenadas)
+  
   {
     id: 'evt-001',
     titulo: 'Visita guiada por la costanera',
@@ -26,7 +25,7 @@ export const eventosMock: Evento[] = [
     estado: 'programado',
   },
 
-  // Termina al día siguiente (cruza la medianoche), con precio
+  
   {
     id: 'evt-002',
     titulo: 'Peña folclórica en el anfiteatro',
@@ -41,7 +40,7 @@ export const eventosMock: Evento[] = [
     estado: 'programado',
   },
 
-  // Asociado a un lugar del catálogo, sin hora de fin
+  
   {
     id: 'evt-003',
     titulo: 'Noche termal con música en vivo',
@@ -56,7 +55,7 @@ export const eventosMock: Evento[] = [
     estado: 'programado',
   },
 
-  // Precio null: no aplica (se paga la entrada del parque)
+  
   {
     id: 'evt-004',
     titulo: 'Avistaje de aves en El Palmar',
@@ -71,7 +70,7 @@ export const eventosMock: Evento[] = [
     estado: 'programado',
   },
 
-  // Feo 1: suspendido por lluvia
+  
   {
     id: 'evt-005',
     titulo: 'Recital en el anfiteatro',
@@ -86,7 +85,7 @@ export const eventosMock: Evento[] = [
     estado: 'suspendido',
   },
 
-  // Feo 2: cancelado
+  
   {
     id: 'evt-006',
     titulo: 'Feria de artesanos',
@@ -101,7 +100,7 @@ export const eventosMock: Evento[] = [
     estado: 'cancelado',
   },
 
-  // Feo 3: ya pasó
+  
   {
     id: 'evt-007',
     titulo: 'Muestra de fotografía',
@@ -116,7 +115,7 @@ export const eventosMock: Evento[] = [
     estado: 'finalizado',
   },
 
-  // Feo 4: título y descripción larguísimos
+  
   {
     id: 'evt-008',
     titulo: 'Gran festival regional de música, danza, gastronomía y artesanías de la costa del río Uruguay',

@@ -17,8 +17,7 @@ export const sincronizarVisitasPendientes = async () => {
     if (paraSubir.length === 0) return true;
 
     for (const visita of paraSubir) {
-      // Acá se conectará el fetch a la API de la cátedra
-      // await fetch('https://api.catedra.uner.edu.ar/visitas', { ... })
+      
       
       await visitasServicio.marcarComoSincronizada(visita.id);
     }

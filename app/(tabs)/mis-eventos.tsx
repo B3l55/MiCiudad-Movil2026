@@ -21,12 +21,12 @@ export default function MisEventos() {
           const respuesta = await eventosGuardadosServicio.obtenerGuardados();
           
           if (activo) {
-            // Validamos estrictamente que sea un array antes de guardarlo en el estado
+            
             setEventosGuardados(Array.isArray(respuesta) ? respuesta : []);
           }
         } catch (error) {
           console.error('Error en UI al cargar eventos guardados:', error);
-          if (activo) setEventosGuardados([]); // Fallback de seguridad
+          if (activo) setEventosGuardados([]); 
         } finally {
           if (activo) setCargando(false);
         }

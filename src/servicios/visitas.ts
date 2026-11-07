@@ -88,7 +88,7 @@ const subirFoto = async (uriLocal: string): Promise<string> => {
   return url;
 };
 
-// Sube una visita pendiente: primero la foto (si tiene) y después la visita
+
 const subirPendiente = async (visita: VisitaPendiente): Promise<void> => {
   let fotoUri: string | null = null;
   if (visita.fotoLocal && new File(visita.fotoLocal).exists) {
@@ -220,8 +220,7 @@ export const visitasServicio = {
   },
 
   marcarComoSincronizada: async (id: string): Promise<void> => {
-    // Reemplazá esto con tu consulta SQLite real si usás expo-sqlite, por ejemplo:
-    // await db.runAsync('UPDATE visitas SET sincronizada = 1 WHERE id = ?', [id]);
+    
     console.log(`Visita ${id} marcada como sincronizada en SQLite.`);
   },
 };

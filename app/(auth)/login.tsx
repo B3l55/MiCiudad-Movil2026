@@ -12,7 +12,7 @@ export default function Login() {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Solo mostramos la huella si el celu tiene lector Y si hay sesión
+  
   const [mostrarBiometria, setMostrarBiometria] = useState(false);
   
   const manejarBiometria = async (mostrarAviso = true) => {
@@ -20,7 +20,7 @@ export default function Login() {
     if (exito) {
       router.replace('/(tabs)' as any);
     } else if (mostrarAviso) {
-      // Si falló o canceló, se queda en el login
+      
       Alert.alert('Autenticación fallida', 'Usá tu correo y contraseña para ingresar.');
     }
   };
@@ -30,7 +30,7 @@ export default function Login() {
       const token = await authService.obtenerToken();
       console.log('LOGIN → hay token:', !!token);
       if (token) {
-        // Chequeamos que el teléfono soporte huella y esté configurada
+        
         const biometriaActiva = await authService.esBiometriaSoportada();
         setMostrarBiometria(biometriaActiva);
         if (biometriaActiva) manejarBiometria(false);
@@ -157,7 +157,7 @@ const estilos = StyleSheet.create({
   },
   input: {
     backgroundColor: '#FFFFFF',
-    color: '#000000', // <-- ACÁ FORZAMOS LA LETRA NEGRA
+    color: '#000000', 
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderRadius: 10,

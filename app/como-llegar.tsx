@@ -9,11 +9,11 @@ import { abrirMapaExterno } from '../src/utilidades/enlaces';
 export default function PantallaComoLlegar() {
   const { lat, lng, nombre } = useLocalSearchParams<{ lat?: string; lng?: string; nombre?: string }>();
 
-  // Parseo seguro de coordenadas
+  
   const latNum = parseFloat(lat ?? '-32.2244');
   const lngNum = parseFloat(lng ?? '-58.1443');
 
-  // Generamos el HTML con el iframe web de Google Maps
+  
   const mapaHtml = `
     <!DOCTYPE html>
     <html>
